@@ -191,8 +191,31 @@ export async function updateOrderStatus(orderId, order_status) {
   const result = await pool.query(
     `UPDATE orders SET order_status = $2, updated_at = NOW()
      WHERE id = $1
-     RETURNING id, order_number as "orderNumber", order_status as "orderStatus", updated_at as "updatedAt"`,
+     RETURNING id, order_number as "orderNumber", order_status as "orderStatus",
+             customer_id as "customerId", customer_name as "customerName",
+             updated_at as "updatedAt"`,
     [orderId, order_status]
   )
-  return result.rows[0] || null
+
+  const order = result.rows[0]
+  if (order?.customerId) {
+    const statusMessages = {
+      confirmed: { title: 'Order Confirmed ✓', message: `Your order #${order.orderNumber} has been confirmed and is being prepared.` },
+      preparing: { title: 'Order Being Prepared 🍰', message: `Your order #${order.orderNumber} is now being prepared with love!` },
+      ready: { title: 'Order Ready! 🎉', message: `Your order #${order.orderNumber} is ready for ${order.deliveryStatus === 'delivery' ? 'delivery' : 'pickup'}!` },
+      out_for_delivery: { title: 'Order On The Way 🚚', message: `Your order #${order.orderNumber} is on its way to you!` },
+      completed: { title: 'Order Completed ✓', message: `Your order #${order.orderNumber} has been delivered. Enjoy your treats!` },
+      cancelled: { title: 'Order Cancelled', message: `Your order #${order.orderNumber} has been cancelled.` },
+    }
+    const msg = statusMessages[order_status]
+    if (msg) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, reference_id, reference_type)
+         VALUES ($1, $2, $3, 'order', $4, 'order')`,
+        [order.customerId, msg.title, msg.message, orderId]
+      ).catch(() => {})
+    }
+  }
+
+  return order
 }
