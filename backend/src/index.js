@@ -57,10 +57,6 @@ const limiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    // Use forwarded IP from Vercel/Railway proxies, fallback to socket IP
-    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown'
-  },
   skip: (req) => {
     // Skip rate limiting for health checks, settings reads, and static assets
     return req.path === '/api/health' ||

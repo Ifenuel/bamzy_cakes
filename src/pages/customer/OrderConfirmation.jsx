@@ -6,7 +6,7 @@ import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import Button from '../../components/ui/Button.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
-import { getOrderById } from '../../services/orderService.js'
+import { apiGetOrderById } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl } from '../../utils/api.js'
 
@@ -45,7 +45,7 @@ export default function OrderConfirmation() {
   useEffect(() => {
     let ok = true
     const guestEmail = localStorage.getItem('bamzy_checkout_email')
-    getOrderById(orderId, guestEmail)
+    apiGetOrderById(orderId, guestEmail)
       .then((d) => { if (ok) { setOrder(d); setIsLoading(false) } })
       .catch(() => { if (ok) setIsLoading(false) })
     return () => { ok = false }

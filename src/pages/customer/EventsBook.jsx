@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import Button from '../../components/ui/Button.jsx'
-import { createEventBooking } from '../../services/bookingService.js'
+import { apiCreateBooking } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { apiGetSettings } from '../../utils/api.js'
 
@@ -70,7 +70,7 @@ export default function EventsBook() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setIsSubmitting(true)
     try {
-      const booking = await createEventBooking({
+      const booking = await apiCreateBooking({
         full_name: form.customerName, email: form.email, phone: form.phone,
         event_type: form.eventType, event_date: form.eventDate, event_location: form.location,
         guest_count: parseInt(form.guestCount), services_requested: form.selectedServices, notes: form.notes,

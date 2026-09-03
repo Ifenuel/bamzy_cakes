@@ -10,7 +10,7 @@ import EmptyState from '../../components/ui/EmptyState.jsx'
 import ImagePlaceholder from '../../components/common/ImagePlaceholder.jsx'
 import { useCart } from '../../context/CartContext.jsx'
 import { useToast } from '../../components/ui/Toast.jsx'
-import { getProducts } from '../../services/productService.js'
+import { apiGetProducts } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl, apiGetDeliveryZones } from '../../utils/api.js'
 
@@ -39,7 +39,7 @@ export default function Cart() {
 
   useEffect(() => {
     let isMounted = true
-    getProducts().then((data) => {
+    apiGetProducts().then((data) => {
       if (isMounted) setAllProducts(data)
     })
     // Fetch default delivery fee from settings

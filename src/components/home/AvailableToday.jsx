@@ -4,7 +4,7 @@ import { ArrowRight, Clock } from 'lucide-react'
 import ProductPreviewCard from './ProductPreviewCard.jsx'
 import LoadingSpinner from '../ui/LoadingSpinner.jsx'
 import ScrollReveal, { StaggerContainer, StaggerItem } from '../ui/ScrollReveal.jsx'
-import { getProductsAvailableToday } from '../../services/productService.js'
+import { apiGetProducts } from '../../utils/api.js'
 
 export default function AvailableToday() {
   const [products, setProducts] = useState([])
@@ -12,7 +12,7 @@ export default function AvailableToday() {
 
   useEffect(() => {
     let isMounted = true
-    getProductsAvailableToday().then((data) => {
+    apiGetProducts({ availableToday: 'true' }).then((data) => {
       if (isMounted) {
         setProducts(data)
         setIsLoading(false)

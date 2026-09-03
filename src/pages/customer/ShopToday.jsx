@@ -9,7 +9,7 @@ import SortSelect from '../../components/shop/SortSelect.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import Button from '../../components/ui/Button.jsx'
-import { getProducts } from '../../services/productService.js'
+import { apiGetProducts } from '../../utils/api.js'
 
 const CATEGORIES = [
   { slug: 'all', label: 'All' },
@@ -37,7 +37,7 @@ export default function ShopToday() {
 
   useEffect(() => {
     let isMounted = true
-    getProducts().then((data) => {
+    apiGetProducts().then((data) => {
       if (isMounted) {
         setProducts(data)
         setIsLoading(false)

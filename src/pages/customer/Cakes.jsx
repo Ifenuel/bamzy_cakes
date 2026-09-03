@@ -6,7 +6,7 @@ import PageContainer from '../../components/layout/PageContainer.jsx'
 import ProductCard from '../../components/shop/ProductCard.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
-import { getProducts } from '../../services/productService.js'
+import { apiGetProducts } from '../../utils/api.js'
 
 export default function Cakes() {
   const [products, setProducts] = useState([])
@@ -15,7 +15,7 @@ export default function Cakes() {
 
   useEffect(() => {
     let isMounted = true
-    getProducts().then((data) => {
+    apiGetProducts().then((data) => {
       if (isMounted) { setProducts(data); setIsLoading(false) }
     })
     return () => { isMounted = false }

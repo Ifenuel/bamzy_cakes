@@ -7,7 +7,7 @@ import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import ImagePlaceholder from '../../components/common/ImagePlaceholder.jsx'
-import { getTrainings } from '../../services/trainingService.js'
+import { apiGetTrainings } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl } from '../../utils/api.js'
 
@@ -25,7 +25,7 @@ export default function Trainings() {
 
   useEffect(() => {
     let ok = true
-    getTrainings().then((d) => { if (ok) { setTrainings(d); setIsLoading(false) } })
+    apiGetTrainings().then((d) => { if (ok) { setTrainings(d); setIsLoading(false) } })
     return () => { ok = false }
   }, [])
 

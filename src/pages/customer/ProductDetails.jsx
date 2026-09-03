@@ -12,7 +12,7 @@ import Button from '../../components/ui/Button.jsx'
 import ImagePlaceholder from '../../components/common/ImagePlaceholder.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import ProductCard from '../../components/shop/ProductCard.jsx'
-import { getProductById, getProducts } from '../../services/productService.js'
+import { apiGetProductById, apiGetProducts } from '../../utils/api.js'
 import { useCart } from '../../context/CartContext.jsx'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
@@ -38,7 +38,7 @@ export default function ProductDetails() {
     setQuantity(1)
     setSelectedImage(null)
     setExtraImages([])
-    getProductById(productId).then((data) => {
+    apiGetProductById(productId).then((data) => {
       if (ok) {
         setProduct(data)
         setIsLoading(false)
@@ -57,7 +57,7 @@ export default function ProductDetails() {
 
   useEffect(() => {
     let ok = true
-    getProducts().then((data) => { if (ok) setAllProducts(data) })
+    apiGetProducts().then((data) => { if (ok) setAllProducts(data) })
     return () => { ok = false }
   }, [])
 

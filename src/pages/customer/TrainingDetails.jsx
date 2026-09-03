@@ -8,7 +8,7 @@ import Button from '../../components/ui/Button.jsx'
 import Badge from '../../components/ui/Badge.jsx'
 import ImagePlaceholder from '../../components/common/ImagePlaceholder.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
-import { getTrainingById, registerForTraining } from '../../services/trainingService.js'
+import { apiGetTrainingById, apiRegisterForTraining } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl } from '../../utils/api.js'
@@ -26,7 +26,7 @@ export default function TrainingDetails() {
 
   useEffect(() => {
     let ok = true
-    getTrainingById(trainingId).then((d) => { if (ok) { setTraining(d); setIsLoading(false) } })
+    apiGetTrainingById(trainingId).then((d) => { if (ok) { setTraining(d); setIsLoading(false) } })
     return () => { ok = false }
   }, [trainingId])
 
@@ -56,7 +56,7 @@ export default function TrainingDetails() {
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email.'
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setIsSubmitting(true)
-    const reg = await registerForTraining(trainingId, { full_name: form.fullName, phone: form.phone, email: form.email, number_of_students: form.students })
+    const reg = await apiRegisterForTraining(trainingId, { full_name: form.fullName, phone: form.phone, email: form.email, number_of_students: form.students })
     setIsSubmitting(false)
     if (reg) {
       showToast('Registration confirmed! We will contact you soon.', 'success')
