@@ -52,16 +52,6 @@ logs/
 tmp/
 *.tmp
 
-# ── AI / Codebuff / Freebuff
-.codebuff/
-.freebuff/
-*.codebuff
-.freebuff-desktop*
-freebuff-desktop-*/
-**/freebuff-desktop-*/
-**/.freebuff/
-**/.codebuff/
-
 # ── Testing / Coverage
 coverage/
 .nyc_output/
