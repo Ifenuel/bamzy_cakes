@@ -26,15 +26,32 @@ async function request(path, options = {}) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  })
+  let res
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      signal: AbortSignal.timeout(30000),
+    })
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      throw new Error('Request timed out. Please check your internet connection.')
+    }
+    if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+      throw new Error('Cannot connect to server. Please check that the backend is running.')
+    }
+    throw new Error('Network error. Please check your internet connection.')
+  }
 
-  const data = await res.json()
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error(`Server returned an invalid response (HTTP ${res.status}). The server may be restarting.`)
+  }
 
   if (!res.ok) {
-    throw new Error(data.message || 'Something went wrong')
+    throw new Error(data.message || `Server error (${res.status})`)
   }
 
   return data.data
@@ -229,6 +246,22 @@ export async function apiGetAccount() {
 
 export async function apiUpdateAccount(body) {
   return request('/customers', { method: 'PUT', body: JSON.stringify(body) })
+}
+
+export async function apiDeleteAccount(reason) {
+  return request('/customers', { method: 'DELETE', body: JSON.stringify({ reason }) })
+}
+
+export async function apiGetNotifications() {
+  return request('/customers/notifications')
+}
+
+export async function apiMarkNotificationRead(id) {
+  return request('/customers/notifications/' + id + '/read', { method: 'PUT' })
+}
+
+export async function apiMarkAllNotificationsRead() {
+  return request('/customers/notifications/read-all', { method: 'PUT' })
 }
 
 // Admin

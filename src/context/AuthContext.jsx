@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
 
   function logout() {
     localStorage.removeItem('bamzy_token')
+    localStorage.removeItem('bamzy_remembered_email')
     setUser(null)
   }
 

@@ -55,7 +55,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lilac-soft/30 via-white to-pink-soft/20 px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream via-white to-pink-soft/30 px-4 py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

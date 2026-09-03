@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Star, Trash2, Eye, EyeOff, MessageCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../../components/ui/Toast.jsx'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -49,10 +49,13 @@ export default function AdminReviews() {
     }
   }
 
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+
   async function deleteReview(id) {
     try {
       await adminRequest(`/reviews/admin/${id}`, { method: 'DELETE' })
       setReviews((prev) => prev.filter((r) => r.id !== id))
+      setDeleteConfirm(null)
       showToast('Review deleted', 'info')
     } catch (err) {
       showToast(err.message || 'Failed', 'error')
@@ -130,7 +133,7 @@ export default function AdminReviews() {
                   className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-lilac-soft hover:text-pink">
                   {review.isApproved ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
-                <button onClick={() => deleteReview(review.id)} title="Delete"
+                <button onClick={() => setDeleteConfirm(review)} title="Delete"
                   className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-red-50 hover:text-red-500">
                   <Trash2 size={16} />
                 </button>
@@ -145,6 +148,31 @@ export default function AdminReviews() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated"
+            >
+              <h3 className="font-heading text-lg font-bold text-ink">Delete Review</h3>
+              <p className="mt-2 text-sm text-ink-muted">Are you sure you want to delete this review by <span className="font-semibold text-ink">{deleteConfirm.customerName}</span>? This cannot be undone.</p>
+              <p className="mt-2 text-xs text-ink-muted line-clamp-2">&ldquo;{deleteConfirm.text}&rdquo;</p>
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setDeleteConfirm(null)} className="flex-1 rounded-full border border-lilac-soft px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-lilac-soft">Cancel</button>
+                <button onClick={() => deleteReview(deleteConfirm.id)} className="flex-1 rounded-full bg-error px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600">Delete</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

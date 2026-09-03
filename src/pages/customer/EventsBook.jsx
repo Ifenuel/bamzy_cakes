@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -7,8 +7,9 @@ import PageContainer from '../../components/layout/PageContainer.jsx'
 import Button from '../../components/ui/Button.jsx'
 import { createEventBooking } from '../../services/bookingService.js'
 import { useToast } from '../../components/ui/Toast.jsx'
+import { apiGetSettings } from '../../utils/api.js'
 
-const EVENT_TYPES = [
+const DEFAULT_EVENT_TYPES = [
   { value: 'birthday', label: 'Birthday' },
   { value: 'wedding', label: 'Wedding' },
   { value: 'bridal_shower', label: 'Bridal Shower' },
@@ -17,7 +18,7 @@ const EVENT_TYPES = [
   { value: 'private_event', label: 'Private Party' },
   { value: 'other', label: 'Other' },
 ]
-const SERVICES = ['Cakes', 'Small Chops', 'Pastries', 'Full Catering', 'Dessert Table', 'Event Setup', 'Tiger Nuts & Drinks']
+const DEFAULT_SERVICES = ['Cakes', 'Small Chops', 'Pastries', 'Full Catering', 'Dessert Table', 'Event Setup', 'Tiger Nuts & Drinks']
 
 export default function EventsBook() {
   const { showToast } = useToast()
@@ -25,9 +26,22 @@ export default function EventsBook() {
   const [submitted, setSubmitted] = useState(false)
   const [bookingRef, setBookingRef] = useState('')
   const [errors, setErrors] = useState({})
+  const [eventTypes, setEventTypes] = useState(DEFAULT_EVENT_TYPES)
+  const [services, setServices] = useState(DEFAULT_SERVICES)
   const [form, setForm] = useState({
     customerName: '', phone: '', email: '', eventType: '', eventDate: '', location: '', guestCount: '', selectedServices: [], notes: '',
   })
+
+  useEffect(() => {
+    apiGetSettings().then((settings) => {
+      if (Array.isArray(settings?.event_types_dropdown) && settings.event_types_dropdown.length > 0) {
+        setEventTypes(settings.event_types_dropdown)
+      }
+      if (Array.isArray(settings?.event_services) && settings.event_services.length > 0) {
+        setServices(settings.event_services)
+      }
+    }).catch(() => {})
+  }, [])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -55,15 +69,19 @@ export default function EventsBook() {
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setIsSubmitting(true)
-    const booking = await createEventBooking({
-      full_name: form.customerName, email: form.email, phone: form.phone,
-      event_type: form.eventType, event_date: form.eventDate, event_location: form.location,
-      guest_count: parseInt(form.guestCount), services_requested: form.selectedServices, notes: form.notes,
-    })
+    try {
+      const booking = await createEventBooking({
+        full_name: form.customerName, email: form.email, phone: form.phone,
+        event_type: form.eventType, event_date: form.eventDate, event_location: form.location,
+        guest_count: parseInt(form.guestCount), services_requested: form.selectedServices, notes: form.notes,
+      })
+      setBookingRef(booking.id)
+      setSubmitted(true)
+      showToast('Booking submitted successfully!', 'success')
+    } catch (err) {
+      showToast(err.message || 'Failed to submit booking', 'error')
+    }
     setIsSubmitting(false)
-    setBookingRef(booking.id)
-    setSubmitted(true)
-    showToast('Booking submitted successfully!', 'success')
   }
 
   if (submitted) {
@@ -95,29 +113,29 @@ export default function EventsBook() {
       <form onSubmit={handleSubmit} className="mx-auto mt-8 max-w-2xl space-y-6">
         <div className="rounded-xl2 border border-lilac-soft bg-white p-5 shadow-soft space-y-4">
           <h2 className="font-heading text-lg font-semibold">Your Details</h2>
-          <div><label className="mb-1 block text-sm font-medium text-ink">Full Name *</label><input name="customerName" value={form.customerName} onChange={handleChange} placeholder="Chidi Eze" className={ic} />{errors.customerName && <p className={ec}>{errors.customerName}</p>}</div>
+          <div><label className="mb-1 block text-sm font-medium text-ink">Full Name *</label><input name="customerName" value={form.customerName} onChange={handleChange} placeholder="Your full name" className={ic} />{errors.customerName && <p className={ec}>{errors.customerName}</p>}</div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div><label className="mb-1 block text-sm font-medium text-ink">Phone *</label><input name="phone" value={form.phone} onChange={handleChange} placeholder="08033344455" className={ic} />{errors.phone && <p className={ec}>{errors.phone}</p>}</div>
-            <div><label className="mb-1 block text-sm font-medium text-ink">Email</label><input name="email" value={form.email} onChange={handleChange} placeholder="chidi@example.com" className={ic} /></div>
+            <div><label className="mb-1 block text-sm font-medium text-ink">Phone *</label><input name="phone" value={form.phone} onChange={handleChange} placeholder="08012345678" className={ic} />{errors.phone && <p className={ec}>{errors.phone}</p>}</div>
+            <div><label className="mb-1 block text-sm font-medium text-ink">Email</label><input name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" className={ic} /></div>
           </div>
         </div>
         <div className="rounded-xl2 border border-lilac-soft bg-white p-5 shadow-soft space-y-4">
           <h2 className="font-heading text-lg font-semibold">Event Details</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div><label className="mb-1 block text-sm font-medium text-ink">Event Type *</label>
-              <select name="eventType" value={form.eventType} onChange={handleChange} className={ic}><option value="">Select type</option>{EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
+              <select name="eventType" value={form.eventType} onChange={handleChange} className={ic}><option value="">Select type</option>{eventTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
               {errors.eventType && <p className={ec}>{errors.eventType}</p>}</div>
             <div><label className="mb-1 block text-sm font-medium text-ink">Event Date *</label><input type="date" name="eventDate" value={form.eventDate} onChange={handleChange} className={ic} />{errors.eventDate && <p className={ec}>{errors.eventDate}</p>}</div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div><label className="mb-1 block text-sm font-medium text-ink">Location *</label><input name="location" value={form.location} onChange={handleChange} placeholder="Lekki, Lagos" className={ic} />{errors.location && <p className={ec}>{errors.location}</p>}</div>
+            <div><label className="mb-1 block text-sm font-medium text-ink">Location *</label><input name="location" value={form.location} onChange={handleChange} placeholder="City, State" className={ic} />{errors.location && <p className={ec}>{errors.location}</p>}</div>
             <div><label className="mb-1 block text-sm font-medium text-ink">Expected Guests *</label><input type="number" name="guestCount" min={1} value={form.guestCount} onChange={handleChange} placeholder="100" className={ic} />{errors.guestCount && <p className={ec}>{errors.guestCount}</p>}</div>
           </div>
         </div>
         <div className="rounded-xl2 border border-lilac-soft bg-white p-5 shadow-soft space-y-4">
           <h2 className="font-heading text-lg font-semibold">Services Required</h2>
           <div className="flex flex-wrap gap-2">
-            {SERVICES.map((s) => (
+            {services.map((s) => (
               <button key={s} type="button" onClick={() => toggleService(s)}
                 className={'rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors ' + (form.selectedServices.includes(s) ? 'border-pink bg-pink-soft text-pink' : 'border-lilac-soft text-ink-muted hover:border-lilac')}>
                 {form.selectedServices.includes(s) && <span className="mr-1">&#10003;</span>}{s}

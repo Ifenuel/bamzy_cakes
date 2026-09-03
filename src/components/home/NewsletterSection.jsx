@@ -32,7 +32,7 @@ export default function NewsletterSection() {
   }
 
   return (
-    <section className="border-y border-lilac-soft/60 bg-brand-gradient-subtle py-16 sm:py-24">
+    <section className="border-y border-lilac-soft/60 bg-cream-gradient py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal preset="fadeUp" className="mx-auto max-w-2xl text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-pink">

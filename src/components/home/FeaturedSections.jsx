@@ -1,30 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getImgUrl } from '../../utils/api.js'
+import { getImgUrl, apiGetSettings } from '../../utils/api.js'
 import ScrollReveal from '../ui/ScrollReveal.jsx'
 
-const SECTIONS = [
+const DEFAULT_SECTIONS = [
   {
     title: 'Events & Catering',
     description: 'Birthdays, weddings, outdoor events and celebrations — Bamzy has you covered.',
     to: '/events',
-    img: '/uploads/products/red-velvet-cake.jpg',
+    img: '',
     cta: 'Plan Your Event',
   },
   {
     title: 'Baking Trainings',
     description: 'Learn the art of baking with hands-on practical classes from our expert team.',
     to: '/trainings',
-    img: '/uploads/trainings/cake-decorating.jpg',
+    img: '',
     cta: 'Explore Classes',
   },
   {
     title: 'About Bamzy',
     description: 'A story of passion, flavour and Nigerian sweetness — meet the woman behind the treats.',
     to: '/about',
-    img: '/uploads/brand/ceo-bamzy.jpg',
+    img: '',
     cta: 'Our Story',
   },
 ]
@@ -82,6 +82,21 @@ function SectionCard({ section, index, className = '' }) {
 }
 
 export default function FeaturedSections() {
+  const [sections, setSections] = useState(DEFAULT_SECTIONS)
+
+  useEffect(() => {
+    apiGetSettings().then((s) => {
+      if (Array.isArray(s?.featured_sections) && s.featured_sections.length > 0) {
+        setSections(s.featured_sections.map((sec, i) => ({
+          ...DEFAULT_SECTIONS[i],
+          ...sec,
+          to: DEFAULT_SECTIONS[i]?.to || '/shop',
+          cta: DEFAULT_SECTIONS[i]?.cta || 'Learn More',
+        })))
+      }
+    }).catch(() => {})
+  }, [])
+
   return (
     <section className="bg-brand-gradient-subtle py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -96,24 +111,14 @@ export default function FeaturedSections() {
 
         {/* Editorial asymmetric grid */}
         <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {/* First card — tall */}
-          <SectionCard
-            section={SECTIONS[0]}
-            index={0}
-            className="min-h-[320px] sm:min-h-[400px] lg:row-span-2 lg:min-h-0"
-          />
-          {/* Second card */}
-          <SectionCard
-            section={SECTIONS[1]}
-            index={1}
-            className="min-h-[280px] sm:min-h-[320px]"
-          />
-          {/* Third card */}
-          <SectionCard
-            section={SECTIONS[2]}
-            index={2}
-            className="min-h-[280px] sm:min-h-[320px]"
-          />
+          {sections.map((section, i) => (
+            <SectionCard
+              key={section.title}
+              section={section}
+              index={i}
+              className={i === 0 ? 'min-h-[320px] sm:min-h-[400px] lg:row-span-2 lg:min-h-0' : 'min-h-[280px] sm:min-h-[320px]'}
+            />
+          ))}
         </div>
       </div>
     </section>

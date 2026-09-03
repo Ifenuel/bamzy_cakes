@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Edit2, Trash2, X, Upload, Image } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { apiGetTrainings, apiCreateTraining, apiUpdateTraining, apiDeleteTraining, apiUploadImage, getImgUrl } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
@@ -27,7 +27,7 @@ export default function AdminTrainings() {
       location: t.location || '', capacity: String(t.capacity || ''),
       what_you_will_learn: Array.isArray(t.whatYouWillLearn) ? t.whatYouWillLearn.join('\n') : '',
       requirements: Array.isArray(t.requirements) ? t.requirements.join('\n') : '',
-      image_url: t.image_url || '',
+      image_url: t.imageUrl || t.image_url || '',
     })
     setShowForm(true)
   }
@@ -67,8 +67,10 @@ export default function AdminTrainings() {
     } catch (err) { showToast(err.message || 'Failed', 'error') }
   }
 
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+
   async function handleDelete(id) {
-    try { await apiDeleteTraining(id); showToast('Training deleted.', 'info'); apiGetTrainings().then(setTrainings) }
+    try { await apiDeleteTraining(id); showToast('Training deleted.', 'info'); setDeleteConfirm(null); apiGetTrainings().then(setTrainings) }
     catch (err) { showToast(err.message || 'Failed', 'error') }
   }
 
@@ -120,18 +122,48 @@ export default function AdminTrainings() {
       <div className="mt-4 space-y-3">
         {trainings.map((t) => (
           <div key={t.id} className="flex items-center gap-3 rounded-xl2 border border-lilac-soft bg-white p-4 shadow-soft sm:p-5">
-            {t.image_url && (<img src={getImgUrl(t.image_url)} alt={t.title} className="h-16 w-16 shrink-0 rounded-lg object-cover" />)}
+            {(t.imageUrl || t.image_url) && (<img src={getImgUrl(t.imageUrl || t.image_url)} alt={t.title} className="h-16 w-16 shrink-0 rounded-lg object-cover" />)}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">{t.title}</p>
               <p className="text-xs text-ink-muted">{fd(t.date)} | {t.startTime}-{t.endTime} | {formatNaira(t.price)}</p>
               <p className="text-xs text-ink-muted">{t.availableSpaces} of {t.capacity} spots available</p>
             </div>
             <div className="flex gap-1"><button onClick={() => openEdit(t)} className="rounded-lg p-1.5 text-ink-muted hover:bg-lilac-soft hover:text-pink"><Edit2 size={14} /></button>
-              <button onClick={() => handleDelete(t.id)} className="rounded-lg p-1.5 text-ink-muted hover:bg-pink-soft hover:text-pink"><Trash2 size={14} /></button></div>
+              <button onClick={() => setDeleteConfirm(t)} className="rounded-lg p-1.5 text-ink-muted hover:bg-pink-soft hover:text-pink"><Trash2 size={14} /></button></div>
           </div>
         ))}
         {trainings.length === 0 && <p className="py-10 text-center text-sm text-ink-muted">No trainings yet.</p>}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-error-soft"><Trash2 size={18} className="text-error" /></div>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-ink">Delete Training</h3>
+                  <p className="text-xs text-ink-muted">This action cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-sm text-ink-muted mb-5">Are you sure you want to delete <span className="font-semibold text-ink">{deleteConfirm.title}</span>? All registration data for this training will be lost.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="flex-1 rounded-full border border-lilac-soft px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-lilac-soft">Cancel</button>
+                <button onClick={() => handleDelete(deleteConfirm.id)} className="flex-1 rounded-full bg-error px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600">Delete Training</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

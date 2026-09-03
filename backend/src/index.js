@@ -53,10 +53,22 @@ app.use(cors({
 // General rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 2000,
   message: { success: false, message: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use forwarded IP from Vercel/Railway proxies, fallback to socket IP
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown'
+  },
+  skip: (req) => {
+    // Skip rate limiting for health checks, settings reads, and static assets
+    return req.path === '/api/health' ||
+           (req.method === 'GET' && req.path === '/api/settings') ||
+           req.path.startsWith('/uploads/') ||
+           req.path.includes('.js') ||
+           req.path.includes('.css')
+  },
 })
 app.use(limiter)
 
@@ -163,6 +175,15 @@ async function start() {
     console.error(`[startup] Or run this first: node -e "require('child_process').execSync('npx kill-port ${PORT}')"`)
     process.exit(1)
   }
+
+  // Prevent crashes from unhandled errors
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[ERROR] Unhandled Rejection:', reason?.message || reason)
+  })
+  process.on('uncaughtException', (err) => {
+    console.error('[ERROR] Uncaught Exception:', err.message)
+    // Don't exit — let the server continue
+  })
 
   // Start the server
   app.listen(PORT, () => {

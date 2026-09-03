@@ -16,6 +16,7 @@ import {
   Star,
   Mail,
   MapPin,
+  HelpCircle,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -38,6 +39,7 @@ const NAV_GROUPS = [
       { label: 'Payments', to: '/admin/payments', icon: CreditCard },
       { label: 'Reviews', to: '/admin/reviews', icon: Star },
       { label: 'Newsletter', to: '/admin/newsletter', icon: Mail },
+      { label: 'FAQ', to: '/admin/faq', icon: HelpCircle },
     ],
   },
   {

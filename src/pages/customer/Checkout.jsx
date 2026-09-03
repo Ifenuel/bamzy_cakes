@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Truck, Store, CreditCard } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ArrowLeft, Truck, Store, CreditCard, AlertTriangle, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import Button from '../../components/ui/Button.jsx'
@@ -78,6 +78,7 @@ export default function Checkout() {
 
   // Double-click protection: track if payment has been initiated
   const [paymentInitiated, setPaymentInitiated] = useState(false)
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -86,6 +87,12 @@ export default function Checkout() {
     if (items.length === 0) { showToast('Your cart is empty.', 'error'); return }
     if (isSubmitting || paymentInitiated) return // Prevent double charge
 
+    // Show confirmation dialog first
+    setShowPaymentConfirm(true)
+  }
+
+  async function confirmPayment() {
+    setShowPaymentConfirm(false)
     setIsSubmitting(true)
     setPaymentInitiated(true)
     try {
@@ -313,6 +320,80 @@ export default function Checkout() {
             </div>
           </div>
         </form>
+
+        {/* Payment Confirmation Modal */}
+        <AnimatePresence>
+          {showPaymentConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4"
+              onClick={() => setShowPaymentConfirm(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md rounded-2xl bg-white p-6 shadow-elevated"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-soft">
+                      <AlertTriangle size={20} className="text-warning" />
+                    </div>
+                    <h3 className="font-heading text-lg font-bold text-ink">Confirm Payment</h3>
+                  </div>
+                  <button onClick={() => setShowPaymentConfirm(false)} className="rounded-full p-1 hover:bg-gray-100">
+                    <X size={18} className="text-ink-muted" />
+                  </button>
+                </div>
+
+                <p className="text-sm text-ink-muted mb-4">
+                  You are about to pay <span className="font-bold text-pink">{formatNaira(total)}</span> for your order. This will open the Paystack payment window.
+                </p>
+
+                <div className="rounded-xl bg-brand-gradient-subtle p-4 mb-5">
+                  <div className="space-y-1">
+                    {items.map((item) => (
+                      <div key={item.productId} className="flex justify-between text-sm">
+                        <span className="text-ink-muted truncate mr-2">{item.name} × {item.quantity}</span>
+                        <span className="font-medium text-ink shrink-0">{formatNaira(item.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-ink-muted">Delivery</span>
+                        <span className="font-medium text-ink">{formatNaira(deliveryFee)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-between border-t border-lilac-deep/10 mt-2 pt-2">
+                    <span className="font-bold text-ink">Total</span>
+                    <span className="font-bold text-pink">{formatNaira(total)}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowPaymentConfirm(false)}
+                    className="flex-1 rounded-full border-2 border-lilac-soft px-5 py-3 text-sm font-semibold text-ink-muted transition-colors hover:bg-lilac-soft/60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmPayment}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow"
+                  >
+                    <CreditCard size={18} /> Pay {formatNaira(total)}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </PageContainer>
     </Section>
   )

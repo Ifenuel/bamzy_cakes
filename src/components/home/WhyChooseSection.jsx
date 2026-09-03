@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal.jsx'
+import { apiGetSettings } from '../../utils/api.js'
 
-const BENEFITS = [
+const DEFAULT_BENEFITS = [
   {
     number: '01',
     title: 'Freshly Made',
@@ -72,6 +73,19 @@ function BenefitItem({ benefit, index }) {
 export default function WhyChooseSection() {
   const sectionRef = useRef(null)
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' })
+  const [benefits, setBenefits] = useState(DEFAULT_BENEFITS)
+
+  useEffect(() => {
+    apiGetSettings().then((s) => {
+      if (Array.isArray(s?.why_choose_bamzy) && s.why_choose_bamzy.length > 0) {
+        setBenefits(s.why_choose_bamzy.map((b, i) => ({
+          number: String(i + 1).padStart(2, '0'),
+          title: b.title || DEFAULT_BENEFITS[i]?.title || 'Benefit',
+          description: b.description || DEFAULT_BENEFITS[i]?.description || '',
+        })))
+      }
+    }).catch(() => {})
+  }, [])
 
   return (
     <section className="py-16 sm:py-24" ref={sectionRef}>
@@ -94,7 +108,7 @@ export default function WhyChooseSection() {
 
           {/* Right — Numbered benefits with individual scroll reveals */}
           <div className="lg:col-span-8">
-            {BENEFITS.map((benefit, i) => (
+            {benefits.map((benefit, i) => (
               <BenefitItem key={benefit.number} benefit={benefit} index={i} />
             ))}
           </div>

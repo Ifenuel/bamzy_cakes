@@ -28,6 +28,7 @@ export default function Navbar() {
   const location = useLocation()
   const itemCount = getItemCount()
   const sidebarRef = useRef(null)
+  const menuBtnRef = useRef(null)
 
   useEffect(() => {
     function onScroll() { setIsScrolled(window.scrollY > 20) }
@@ -39,11 +40,13 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleClick(e) {
+      // Don't close if clicking the hamburger toggle button itself
+      if (menuBtnRef.current && menuBtnRef.current.contains(e.target)) return
       if (sidebarRef.current && !sidebarRef.current.contains(e.target)) setIsMenuOpen(false)
     }
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClick)
-      return () => document.removeEventListener('mousedown', handleClick)
+      document.addEventListener('click', handleClick, true)
+      return () => document.removeEventListener('click', handleClick, true)
     }
   }, [isMenuOpen])
 
@@ -52,7 +55,12 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [isMenuOpen])
 
-  function handleLogout() { logout(); setIsMenuOpen(false); navigate('/') }
+  function handleLogout() {
+    logout()
+    setIsMenuOpen(false)
+    // Use hard redirect to fully clear React state
+    window.location.href = '/'
+  }
   const firstName = user?.full_name?.split(' ')[0] || ''
 
   return (
@@ -114,8 +122,9 @@ export default function Navbar() {
             </Link>
 
             <motion.button
+              ref={menuBtnRef}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setIsMenuOpen((o) => !o)}
+              onClick={(e) => { e.stopPropagation(); setIsMenuOpen((o) => !o) }}
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMenuOpen}
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-lilac-soft/60"

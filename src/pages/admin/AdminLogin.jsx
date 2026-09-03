@@ -46,7 +46,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2a1440] via-[#3d1a5e] to-[#1a1025] px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -54,12 +54,12 @@ export default function AdminLogin() {
         className="w-full max-w-md"
       >
         <div className="text-center">
-          <img src="/logo.jpg" alt="Bamzy" className="mx-auto mb-6 h-16 w-auto" />
-          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-gradient text-white shadow-soft">
-            <Shield size={28} />
+          <img src="/logo.jpg" alt="Bamzy" className="mx-auto mb-6 h-20 sm:h-24 w-auto brightness-110" />
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm text-white/80">
+            <Shield size={24} />
           </span>
-          <h1 className="mt-4 font-heading text-3xl font-bold text-ink">Admin Panel</h1>
-          <p className="mt-2 text-ink-muted">Sign in with your admin credentials</p>
+          <h1 className="mt-4 font-heading text-3xl font-bold text-white">Admin Panel</h1>
+          <p className="mt-2 text-white/60">Sign in with your admin credentials</p>
         </div>
 
         {error && (
@@ -69,9 +69,10 @@ export default function AdminLogin() {
           </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md p-8 shadow-elevated">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="admin-email" className="mb-1.5 block text-sm font-medium text-ink">Email</label>
+            <label htmlFor="admin-email" className="mb-1.5 block text-sm font-medium text-white/80">Email</label>
             <div className="relative">
               <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-light" />
               <input
@@ -82,13 +83,13 @@ export default function AdminLogin() {
                 onChange={handleChange}
                 placeholder="admin@bamzycakes.com"
                 autoComplete="email"
-                className="w-full rounded-xl border border-lilac-soft bg-white py-3 pl-11 pr-4 text-sm text-ink transition-colors placeholder:text-ink-light/60 focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20"
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-sm text-white transition-colors placeholder:text-white/40 focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/30"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="admin-password" className="mb-1.5 block text-sm font-medium text-ink">Password</label>
+            <label htmlFor="admin-password" className="mb-1.5 block text-sm font-medium text-white/80">Password</label>
             <div className="relative">
               <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-light" />
               <input
@@ -99,12 +100,12 @@ export default function AdminLogin() {
                 onChange={handleChange}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className="w-full rounded-xl border border-lilac-soft bg-white py-3 pl-11 pr-11 text-sm text-ink transition-colors placeholder:text-ink-light/60 focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20"
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-3 pl-11 pr-11 text-sm text-white transition-colors placeholder:text-white/40 focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/30"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-light transition-colors hover:text-ink"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 transition-colors hover:text-white"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -121,11 +122,10 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">
-          <Link to="/admin/register" className="font-medium text-pink hover:underline">Create admin account</Link>
-        </p>
-        <p className="mt-2 text-center text-sm text-ink-muted">
-          <Link to="/login" className="font-medium text-pink hover:underline">← Back to customer login</Link>
+        </div>
+
+        <p className="mt-6 text-center text-sm text-white/50">
+          <Link to="/login" className="font-medium text-pink-soft hover:text-white transition-colors">← Back to customer login</Link>
         </p>
       </motion.div>
     </div>

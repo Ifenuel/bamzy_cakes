@@ -46,7 +46,7 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-brand-gradient-subtle">
+    <section ref={sectionRef} className="relative overflow-hidden bg-warm-gradient">
       <PageContainer className="grid grid-cols-1 items-center gap-6 py-8 sm:py-10 lg:grid-cols-12 lg:gap-0 lg:py-0">
         {/* Left — Text */}
         <motion.div style={{ y: textY, opacity }} className="relative z-10 lg:col-span-5 lg:pr-8 lg:py-12">

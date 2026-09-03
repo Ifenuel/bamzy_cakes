@@ -3,7 +3,7 @@ import ScrollReveal from '../ui/ScrollReveal.jsx'
 
 export default function FinalCTA() {
   return (
-    <section className="bg-white py-16 sm:py-24">
+    <section className="bg-cream py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal preset="scaleUp" className="mx-auto max-w-3xl text-center">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-pink">

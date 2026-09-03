@@ -46,6 +46,7 @@ const AdminCategories = lazy(() => import('../pages/admin/AdminCategories.jsx'))
 const AdminReviews = lazy(() => import('../pages/admin/AdminReviews.jsx'))
 const AdminNewsletter = lazy(() => import('../pages/admin/AdminNewsletter.jsx'))
 const AdminDeliveryZones = lazy(() => import('../pages/admin/AdminDeliveryZones.jsx'))
+const AdminFAQ = lazy(() => import('../pages/admin/AdminFAQ.jsx'))
 
 /* ── Loading fallback ──────────────────────────────────── */
 function PageLoader() {
@@ -111,6 +112,7 @@ export default function AppRoutes() {
             <Route path="reviews" element={<AdminReviews />} />
             <Route path="newsletter" element={<AdminNewsletter />} />
             <Route path="delivery-zones" element={<AdminDeliveryZones />} />
+            <Route path="faq" element={<AdminFAQ />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>

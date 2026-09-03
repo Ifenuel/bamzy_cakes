@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Settings, Save, Upload, Image as ImageIcon, Plus, Trash2 } from 'lucide-react'
+import { Settings, Save, Upload, Image as ImageIcon, Plus, Trash2, Star, X } from 'lucide-react'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { apiGetSettings, apiUpdateSettings, apiUploadImage } from '../../utils/api.js'
 import { getImgUrl } from '../../utils/api.js'
@@ -26,8 +26,22 @@ export default function AdminSettings() {
     about_story: '',
     about_values: [],
     about_gallery_images: [],
+    // Events page fields
+    event_types: [],
+    event_types_dropdown: [],
+    event_services: [],
+    // Featured sections for homepage
+    featured_sections: [
+      { title: 'Events & Catering', description: '', img: '' },
+      { title: 'Baking Trainings', description: '', img: '' },
+      { title: 'About Bamzy', description: '', img: '' },
+    ],
+    // Why Choose Bamzy
+    why_choose_bamzy: [],
+    events_hero_image: '',
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -66,10 +80,39 @@ export default function AdminSettings() {
           about_gallery_images: Array.isArray(settings.about_gallery_images)
             ? settings.about_gallery_images
             : [],
+          // Events
+          event_types: Array.isArray(settings.event_types) ? settings.event_types : [
+            { title: 'Birthday Parties', desc: 'Custom cakes, small chops and full catering for unforgettable celebrations.', img: '' },
+            { title: 'Weddings', desc: 'Beautiful wedding cakes, dessert tables and catering for your big day.', img: '' },
+            { title: 'Bridal Showers', desc: 'Sweet treats and elegantly packaged pastries for the bride-to-be.', img: '' },
+            { title: 'Baby Showers', desc: 'Adorable cakes and treats to welcome the newest arrival.', img: '' },
+            { title: 'Corporate Events', desc: 'Professional catering for meetings, launches and company parties.', img: '' },
+            { title: 'Private Celebrations', desc: 'Anniversaries, graduations and milestone moments deserve Bamzy treats.', img: '' },
+          ],
+          event_types_dropdown: Array.isArray(settings.event_types_dropdown) ? settings.event_types_dropdown : [
+            { value: 'birthday', label: 'Birthday' },
+            { value: 'wedding', label: 'Wedding' },
+            { value: 'bridal_shower', label: 'Bridal Shower' },
+            { value: 'baby_shower', label: 'Baby Shower' },
+            { value: 'corporate', label: 'Corporate' },
+            { value: 'private_event', label: 'Private Party' },
+            { value: 'other', label: 'Other' },
+          ],
+          event_services: Array.isArray(settings.event_services) ? settings.event_services : ['Cakes', 'Small Chops', 'Pastries', 'Full Catering', 'Dessert Table', 'Event Setup', 'Tiger Nuts & Drinks'],
+          events_hero_image: settings.events_hero_image || '',
+          featured_sections: Array.isArray(settings.featured_sections) && settings.featured_sections.length > 0 ? settings.featured_sections : [
+            { title: 'Events & Catering', description: 'Birthdays, weddings, outdoor events and celebrations — Bamzy has you covered.', img: '' },
+            { title: 'Baking Trainings', description: 'Learn the art of baking with hands-on practical classes from our expert team.', img: '' },
+            { title: 'About Bamzy', description: 'A story of passion, flavour and Nigerian sweetness — meet the woman behind the treats.', img: '' },
+          ],
+          why_choose_bamzy: Array.isArray(settings.why_choose_bamzy) && settings.why_choose_bamzy.length > 0 ? settings.why_choose_bamzy : [],
         })
         setIsLoading(false)
       })
-      .catch(() => setIsLoading(false))
+      .catch((err) => {
+        setLoadError(err.message || 'Failed to load settings')
+        setIsLoading(false)
+      })
   }, [])
 
   function handleChange(e) {
@@ -133,6 +176,13 @@ export default function AdminSettings() {
         about_story: form.about_story,
         about_values: form.about_values,
         about_gallery_images: form.about_gallery_images,
+        // Events
+        event_types: form.event_types,
+        event_types_dropdown: form.event_types_dropdown,
+        event_services: form.event_services,
+        events_hero_image: form.events_hero_image,
+        featured_sections: form.featured_sections,
+        why_choose_bamzy: form.why_choose_bamzy,
       })
       showToast('Settings saved to database!', 'success')
     } catch (err) {
@@ -147,6 +197,18 @@ export default function AdminSettings() {
         <div className="text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-pink border-t-transparent" />
           <p className="mt-3 text-sm text-ink-muted">Loading settings...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <p className="text-lg font-bold text-ink">Failed to load settings</p>
+          <p className="mt-2 text-sm text-ink-muted">{loadError}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white">Try Again</button>
         </div>
       </div>
     )
@@ -326,6 +388,156 @@ export default function AdminSettings() {
           </div>
         </div>
 
+        {/* ═══ EVENTS PAGE MANAGEMENT ═══ */}
+        <div className="space-y-4 rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+          <div>
+            <h2 className="font-heading text-lg font-semibold">Events Page Content</h2>
+            <p className="text-xs text-ink-muted mt-1">Manage event types shown on the Events page and booking form.</p>
+          </div>
+
+          {/* Event Types (display cards on /events) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-ink">Event Types (shown on Events page)</label>
+              <button type="button" onClick={() => setForm(p => ({ ...p, event_types: [...p.event_types, { title: '', desc: '', img: '' }] }))}
+                className="flex items-center gap-1 rounded-lg bg-pink-soft px-3 py-1.5 text-xs font-semibold text-pink hover:bg-pink/10 transition-colors">
+                <Plus size={14} /> Add Event Type
+              </button>
+            </div>
+            <div className="space-y-3">
+              {form.event_types.map((et, i) => (
+                <div key={i} className="rounded-lg border border-lilac-soft bg-gray-50 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-ink-muted uppercase">Event {i + 1}</span>
+                    {form.event_types.length > 1 && (
+                      <button type="button" onClick={() => setForm(p => ({ ...p, event_types: p.event_types.filter((_, j) => j !== i) }))}
+                        className="text-pink hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                    )}
+                  </div>
+                  <input value={et.title} onChange={(e) => { const v = [...form.event_types]; v[i] = { ...v[i], title: e.target.value }; setForm(p => ({ ...p, event_types: v })) }}
+                    className={ic} placeholder="e.g. Birthday Parties" />
+                  <input value={et.desc} onChange={(e) => { const v = [...form.event_types]; v[i] = { ...v[i], desc: e.target.value }; setForm(p => ({ ...p, event_types: v })) }}
+                    className={ic} placeholder="Description..." />
+                  <div className="flex items-center gap-2">
+                    <EventImageUpload label={`Event ${i + 1} Image`} currentImage={et.img}
+                      onUpload={(url) => { const v = [...form.event_types]; v[i] = { ...v[i], img: url }; setForm(p => ({ ...p, event_types: v })) }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Event Types Dropdown (for booking form) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-ink">Booking Form Dropdown Options</label>
+              <button type="button" onClick={() => setForm(p => ({ ...p, event_types_dropdown: [...p.event_types_dropdown, { value: '', label: '' }] }))}
+                className="flex items-center gap-1 rounded-lg bg-pink-soft px-3 py-1.5 text-xs font-semibold text-pink hover:bg-pink/10 transition-colors">
+                <Plus size={14} /> Add Option
+              </button>
+            </div>
+            <div className="space-y-2">
+              {form.event_types_dropdown.map((opt, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input value={opt.value} onChange={(e) => { const v = [...form.event_types_dropdown]; v[i] = { ...v[i], value: e.target.value }; setForm(p => ({ ...p, event_types_dropdown: v })) }}
+                    className={ic} placeholder="value (e.g. birthday)" style={{ flex: 1 }} />
+                  <input value={opt.label} onChange={(e) => { const v = [...form.event_types_dropdown]; v[i] = { ...v[i], label: e.target.value }; setForm(p => ({ ...p, event_types_dropdown: v })) }}
+                    className={ic} placeholder="Label (e.g. Birthday)" style={{ flex: 1 }} />
+                  {form.event_types_dropdown.length > 1 && (
+                    <button type="button" onClick={() => setForm(p => ({ ...p, event_types_dropdown: p.event_types_dropdown.filter((_, j) => j !== i) }))}
+                      className="text-pink hover:text-red-500"><Trash2 size={14} /></button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Event Services */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink">Booking Form Services (comma separated)</label>
+            <input value={form.event_services.join(', ')} onChange={(e) => setForm(p => ({ ...p, event_services: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+              className={ic} placeholder="Cakes, Small Chops, Pastries..." />
+          </div>
+
+          {/* Events Hero Image */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink">Events Page Hero Image</label>
+            <EventImageUpload label="Events Hero" currentImage={form.events_hero_image}
+              onUpload={(url) => setForm(p => ({ ...p, events_hero_image: url }))} />
+          </div>
+        </div>
+
+        {/* ─── Featured Sections (Homepage) ─── */}
+        <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+          <div className="flex items-center gap-2 mb-4">
+            <Star size={18} className="text-lilac" />
+            <h3 className="font-heading text-base font-semibold text-ink">Homepage Featured Sections</h3>
+          </div>
+          <p className="mb-3 text-xs text-ink-muted">These appear on the homepage &ldquo;What are you looking for?&rdquo; section. Upload images for each card.</p>
+          <div className="space-y-4">
+            {(form.featured_sections || []).map((sec, i) => (
+              <div key={i} className="rounded-lg border border-lilac-soft/60 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-ink">Card {i + 1}</span>
+                </div>
+                <input value={sec.title} onChange={(e) => setForm(p => {
+                  const fs = [...p.featured_sections]
+                  fs[i] = { ...fs[i], title: e.target.value }
+                  return { ...p, featured_sections: fs }
+                })} className={ic} placeholder="Section title" />
+                <input value={sec.description} onChange={(e) => setForm(p => {
+                  const fs = [...p.featured_sections]
+                  fs[i] = { ...fs[i], description: e.target.value }
+                  return { ...p, featured_sections: fs }
+                })} className={ic} placeholder="Short description" />
+                <EventImageUpload label={sec.title} currentImage={sec.img}
+                  onUpload={(url) => setForm(p => {
+                    const fs = [...p.featured_sections]
+                    fs[i] = { ...fs[i], img: url }
+                    return { ...p, featured_sections: fs }
+                  })} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ─── Why Choose Bamzy ─── */}
+        <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Star size={18} className="text-lilac" />
+              <h3 className="font-heading text-base font-semibold text-ink">Why Choose Bamzy</h3>
+            </div>
+            <button type="button" onClick={() => setForm(p => ({ ...p, why_choose_bamzy: [...(p.why_choose_bamzy || []), { title: '', description: '' }] }))}
+              className="text-xs font-medium text-pink hover:underline">+ Add benefit</button>
+          </div>
+          <p className="mb-3 text-xs text-ink-muted">These appear as the numbered list on the homepage &ldquo;Why Choose Bamzy?&rdquo; section.</p>
+          <div className="space-y-3">
+            {(form.why_choose_bamzy || []).map((b, i) => (
+              <div key={i} className="flex gap-2 items-start rounded-lg border border-lilac-soft/60 p-3">
+                <span className="mt-2 text-sm font-bold text-lilac">{String(i + 1).padStart(2, '0')}</span>
+                <div className="flex-1 space-y-2">
+                  <input value={b.title} onChange={(e) => setForm(p => {
+                    const w = [...p.why_choose_bamzy]
+                    w[i] = { ...w[i], title: e.target.value }
+                    return { ...p, why_choose_bamzy: w }
+                  })} className={ic} placeholder="Benefit title (e.g. Freshly Made)" />
+                  <textarea value={b.description} onChange={(e) => setForm(p => {
+                    const w = [...p.why_choose_bamzy]
+                    w[i] = { ...w[i], description: e.target.value }
+                    return { ...p, why_choose_bamzy: w }
+                  })} rows={2} className={ic + ' resize-none'} placeholder="Short description" />
+                </div>
+                <button type="button" onClick={() => setForm(p => ({ ...p, why_choose_bamzy: p.why_choose_bamzy.filter((_, j) => j !== i) }))}
+                  className="mt-2 rounded p-1 text-ink-muted hover:bg-error-soft hover:text-error"><X size={14} /></button>
+              </div>
+            ))}
+            {(!form.why_choose_bamzy || form.why_choose_bamzy.length === 0) && (
+              <p className="py-4 text-center text-xs text-ink-muted">No benefits added yet. Click &ldquo;Add benefit&rdquo; above.</p>
+            )}
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={isSaving}
@@ -430,9 +642,47 @@ function AboutGalleryUpload({ images, onUpdate }) {
                 <Trash2 size={12} />
               </button>
             </div>
-          ))}
+          ))}          </div>
+        )}
+    </div>
+  )
+}
+
+function EventImageUpload({ label, currentImage, onUpload }) {
+  const { showToast } = useToast()
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef(null)
+
+  async function handleUpload(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error')
+      return
+    }
+    setUploading(true)
+    try {
+      const data = await apiUploadImage('events', file)
+      onUpload(data.imageUrl)
+      showToast('Image uploaded! Click "Save Settings" to apply.', 'success')
+    } catch (err) {
+      showToast(err.message || 'Upload failed', 'error')
+    }
+    setUploading(false)
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      {currentImage ? (
+        <img src={getImgUrl(currentImage)} alt={label} className="h-16 w-16 rounded-lg object-cover" />
+      ) : (
+        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-lilac/10">
+          <ImageIcon size={20} className="text-lilac/40" />
         </div>
       )}
+      <label className="flex cursor-pointer items-center gap-2 rounded-lg bg-lilac/10 px-4 py-2 text-xs font-semibold text-lilac-deep transition-colors hover:bg-lilac/20">
+        <Upload size={14} />
+        {uploading ? 'Uploading...' : (currentImage ? 'Change' : 'Upload Image')}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} disabled={uploading} />
+      </label>
     </div>
   )
 }

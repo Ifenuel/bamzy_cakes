@@ -16,6 +16,19 @@ export default {
           light: '#FFF4F8',
           50: '#FFF5F9',
         },
+        cream: {
+          DEFAULT: '#FFF8F0',
+          warm: '#FFF3E4',
+          deep: '#FFE8CC',
+        },
+        gold: {
+          DEFAULT: '#D4A853',
+          soft: '#F5E6C8',
+        },
+        lavender: {
+          DEFAULT: '#C4B1D9',
+          soft: '#E8DFF0',
+        },
         ink: {
           DEFAULT: '#24172F',
           muted: '#756B7E',
@@ -35,6 +48,9 @@ export default {
         'brand-gradient-soft': 'linear-gradient(135deg, #EDE1F8 0%, #FBD7E7 100%)',
         'brand-gradient-deep': 'linear-gradient(135deg, #6F4AA8 0%, #F04B8A 100%)',
         'brand-gradient-subtle': 'linear-gradient(135deg, #F8F4FD 0%, #FFF5F9 100%)',
+        'warm-gradient': 'linear-gradient(135deg, #FFF8F0 0%, #FBD7E7 50%, #EDE1F8 100%)',
+        'cream-gradient': 'linear-gradient(180deg, #FFF8F0 0%, #FFFFFF 100%)',
+        'lilac-gradient': 'linear-gradient(135deg, #EDE1F8 0%, #C4B1D9 100%)',
       },
       boxShadow: {
         'xs': '0 1px 2px rgba(36, 23, 47, 0.05)',

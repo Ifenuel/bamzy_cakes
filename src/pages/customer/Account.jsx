@@ -4,13 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, CalendarCheck, GraduationCap,
   Heart, UserCircle, Settings, LogOut, Menu, X,
-  ShoppingBag, TrendingUp, ChevronRight, Camera, Check
+  ShoppingBag, TrendingUp, ChevronRight, Camera, Check, Bell, Trash2, AlertTriangle, Save, Mail, Phone
 } from 'lucide-react'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, getImgUrl } from '../../utils/api.js'
+import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, apiDeleteAccount, apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, getImgUrl } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
+import { useToast } from '../../components/ui/Toast.jsx'
 
 /* ─── Sidebar tabs ─── */
 const TABS = [
@@ -98,7 +99,7 @@ export default function Account() {
 
   function handleLogout() {
     logout()
-    navigate('/')
+    window.location.href = '/'
   }
 
   /* ─── Loading / Auth guard ─── */
@@ -154,7 +155,7 @@ export default function Account() {
       case 'trainings': return <TrainingsTab trainings={trainings} navigate={navigate} fd={fd} />
       case 'favourites': return <FavouritesTab />
       case 'profile': return <ProfileTab user={user} />
-      case 'settings': return <SettingsTab user={user} />
+      case 'settings': return <SettingsTab user={user} onSave={(data) => apiUpdateProfile(data)} />
       default: return null
     }
   }
@@ -720,25 +721,178 @@ function ProfileTab({ user }) {
 /* ═══════════════════════════════════════════════════════
    SETTINGS TAB
    ═══════════════════════════════════════════════════════ */
-function SettingsTab({ user }) {
+function SettingsTab({ user, onSave }) {
+  const { showToast } = useToast()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '', phone: user?.phone || '' })
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    apiGetNotifications().then(setNotifications).catch(() => {})
+  }, [])
+
+  const unreadCount = notifications.filter(n => !n.isRead).length
+
+  async function handleSaveProfile() {
+    setIsSavingProfile(true)
+    try {
+      await onSave(profileForm)
+      showToast('Profile updated!', 'success')
+    } catch (err) {
+      showToast(err.message || 'Failed to update', 'error')
+    }
+    setIsSavingProfile(false)
+  }
+
+  async function handleDeleteAccount() {
+    if (!deleteReason.trim()) { showToast('Please provide a reason', 'error'); return }
+    setIsDeleting(true)
+    try {
+      await apiDeleteAccount(deleteReason)
+      showToast('Account deleted. We are sorry to see you go.', 'success')
+      logout()
+      window.location.href = '/'
+    } catch (err) {
+      showToast(err.message || 'Failed to delete account', 'error')
+    }
+    setIsDeleting(false)
+  }
+
+  async function handleMarkAllRead() {
+    try {
+      await apiMarkAllNotificationsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    } catch {}
+  }
+
+  async function handleMarkRead(id) {
+    try {
+      await apiMarkNotificationRead(id)
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+    } catch {}
+  }
+
+  const ic = 'w-full rounded-xl border border-lilac-soft bg-white px-4 py-2.5 text-sm focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20'
+
   return (
-    <div>
-      <h2 className="font-heading text-xl font-bold text-ink mb-6">Settings</h2>
-      <div className="max-w-lg space-y-6">
-        <div className="rounded-xl border border-lilac-soft bg-white p-5">
-          <p className="text-sm font-semibold text-ink">Account</p>
-          <p className="mt-1 text-sm text-ink-muted">{user?.email}</p>
-          <p className="text-xs text-ink-light mt-1 capitalize">Role: {user?.role || 'customer'}</p>
+    <div className="space-y-8">
+      <h2 className="font-heading text-xl font-bold text-ink">Settings</h2>
+
+      {/* Profile Section */}
+      <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+        <div className="flex items-center gap-2 mb-4">
+          <UserCircle size={18} className="text-lilac" />
+          <h3 className="font-heading text-base font-semibold text-ink">Edit Profile</h3>
         </div>
-        <div className="rounded-xl border border-lilac-soft bg-white p-5">
-          <p className="text-sm font-semibold text-ink">Notifications</p>
-          <p className="mt-1 text-sm text-ink-muted">Order updates and booking confirmations are sent to your email.</p>
-        </div>
-        <div className="rounded-xl border border-error-soft bg-error-soft/30 p-5">
-          <p className="text-sm font-semibold text-error">Danger Zone</p>
-          <p className="mt-1 text-sm text-ink-muted">Contact support to delete your account.</p>
+        <div className="space-y-3 max-w-md">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink">Full Name</label>
+            <input value={profileForm.full_name} onChange={(e) => setProfileForm(p => ({ ...p, full_name: e.target.value }))} className={ic} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink">Phone</label>
+            <input value={profileForm.phone} onChange={(e) => setProfileForm(p => ({ ...p, phone: e.target.value }))} className={ic} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink">Email</label>
+            <input value={user?.email} disabled className={ic + ' bg-gray-50 text-ink-muted cursor-not-allowed'} />
+            <p className="text-[10px] text-ink-light mt-1">Email cannot be changed</p>
+          </div>
+          <button onClick={handleSaveProfile} disabled={isSavingProfile}
+            className="flex items-center gap-2 rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow disabled:opacity-50">
+            <Save size={16} /> {isSavingProfile ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
       </div>
+
+      {/* Notifications */}
+      <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Bell size={18} className="text-lilac" />
+            <h3 className="font-heading text-base font-semibold text-ink">Notifications</h3>
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-pink px-2 py-0.5 text-[10px] font-bold text-white">{unreadCount}</span>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <button onClick={handleMarkAllRead} className="text-xs font-medium text-pink hover:underline">Mark all read</button>
+          )}
+        </div>
+        {notifications.length === 0 ? (
+          <p className="py-6 text-center text-sm text-ink-muted">No notifications yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {notifications.map((n) => (
+              <div key={n.id} onClick={() => !n.isRead && handleMarkRead(n.id)}
+                className={`flex items-start gap-3 rounded-lg p-3 transition-colors cursor-pointer ${n.isRead ? 'bg-gray-50' : 'bg-lilac-soft/40 hover:bg-lilac-soft/60'}`}>
+                <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : '📢'}</span>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
+                  <p className="text-xs text-ink-muted mt-0.5 line-clamp-2">{n.message}</p>
+                  <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-pink mt-1" />}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Account Info */}
+      <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
+        <div className="flex items-center gap-2 mb-2">
+          <Mail size={18} className="text-lilac" />
+          <h3 className="font-heading text-base font-semibold text-ink">Account</h3>
+        </div>
+        <p className="text-sm text-ink-muted">{user?.email}</p>
+        <p className="text-xs text-ink-light mt-1 capitalize">Role: {user?.role || 'customer'}</p>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="rounded-xl border-2 border-error/30 bg-error-soft/20 p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle size={18} className="text-error" />
+          <h3 className="font-heading text-base font-semibold text-error">Danger Zone</h3>
+        </div>
+        <p className="text-sm text-ink-muted mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <button onClick={() => setShowDeleteModal(true)}
+          className="flex items-center gap-2 rounded-full border-2 border-error bg-white px-5 py-2.5 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white">
+          <Trash2 size={16} /> Delete My Account
+        </button>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4" onClick={() => setShowDeleteModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-xl bg-white p-6 shadow-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-error-soft"><Trash2 size={18} className="text-error" /></div>
+              <div>
+                <h3 className="font-heading text-lg font-bold text-ink">Delete Account</h3>
+                <p className="text-xs text-ink-muted">This action is permanent and cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-ink-muted mb-3">Please tell us why you are leaving (this helps us improve):</p>
+            <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} rows={3}
+              className="w-full resize-none rounded-xl border border-lilac-soft px-4 py-3 text-sm focus:border-error focus:outline-none focus:ring-2 focus:ring-error/20"
+              placeholder="e.g. I no longer need the service, found an alternative..." />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setShowDeleteModal(false)}
+                className="flex-1 rounded-full border border-lilac-soft px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-lilac-soft transition-colors">Cancel</button>
+              <button onClick={handleDeleteAccount} disabled={isDeleting || !deleteReason.trim()}
+                className="flex-1 rounded-full bg-error px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
