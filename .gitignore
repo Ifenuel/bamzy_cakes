@@ -40,10 +40,6 @@ yarn-error.log*
 pnpm-debug.log*
 logs/
 
-# ─── Private Development Files ───
-.freebuff/
-.codebuff/
-
 # ─── OS Files ───
 .DS_Store
 .DS_Store?
