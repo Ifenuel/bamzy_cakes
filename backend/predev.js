@@ -21,37 +21,46 @@ async function main() {
     return
   }
 
-  console.log(`[predev] Port ${PORT} is busy — killing zombie process...`)
+  console.log(`[predev] Port ${PORT} is busy — attempting to free it...`)
 
+  const isWin = platform() === 'win32'
+
+  // Method 1: Try npx kill-port
   try {
-    const isWin = platform() === 'win32'
-    const result = execSync('netstat -ano', { encoding: 'utf8', timeout: 5000 })
-    const lines = result.split('\n').filter(l => l.includes(`:${PORT}`) && l.includes('LISTENING'))
+    execSync('npx kill-port 5000', { stdio: 'ignore', timeout: 10000 })
+    console.log(`[predev] Freed port ${PORT} via npx kill-port`)
+    await new Promise(r => setTimeout(r, 1500))
+    const ok = await isPortFree(PORT)
+    if (ok) { console.log(`[predev] Port ${PORT} is now free`); return }
+  } catch {}
+
+  // Method 2: Try netstat + taskkill/kill
+  try {
+    const cmd = isWin ? 'netstat -ano' : 'ss -tlnp'
+    const result = execSync(cmd, { encoding: 'utf8', timeout: 5000 })
+    const lines = result.split('\n').filter(l => l.includes(`:${PORT}`) && l.includes('LISTEN'))
 
     for (const line of lines) {
-      const pid = line.trim().split(/\s+/).pop()
+      const parts = line.trim().split(/\s+/)
+      const pid = isWin ? parts[parts.length - 1] : parts[parts.length - 1]?.split('=')?.[1]?.split(',')[0]
       if (pid && pid !== '0' && pid !== String(process.pid)) {
         try {
-          if (isWin) {
-            execSync(`taskkill /F /PID ${pid}`, { encoding: 'utf8', stdio: 'ignore', timeout: 5000 })
-          } else {
-            execSync(`kill -9 ${pid}`, { encoding: 'utf8', stdio: 'ignore', timeout: 5000 })
-          }
-          console.log(`[predev] Killed zombie process ${pid}`)
+          const killCmd = isWin ? `taskkill /F /PID ${pid}` : `kill -9 ${pid}`
+          execSync(killCmd, { stdio: 'ignore', timeout: 5000 })
+          console.log(`[predev] Killed process ${pid} on port ${PORT}`)
         } catch {}
       }
     }
   } catch {}
 
-  // Wait for OS to release the port
-  await new Promise(r => setTimeout(r, 1000))
+  await new Promise(r => setTimeout(r, 1500))
 
   const freeAfter = await isPortFree(PORT)
   if (freeAfter) {
     console.log(`[predev] Port ${PORT} is now free — starting server...`)
   } else {
-    console.error(`[predev] Port ${PORT} is still busy. Close all terminals and try again.`)
-    process.exit(1)
+    console.warn(`[predev] WARNING: Port ${PORT} may still be busy. Server will try to start anyway.`)
+    // Don't exit — let the server try to start
   }
 }
 

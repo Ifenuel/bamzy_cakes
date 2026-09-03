@@ -60,11 +60,11 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-// Auth rate limiter
+// Auth rate limiter (20 attempts per 15 minutes)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { success: false, message: 'Too many login attempts, please try again later.' },
+  max: 20,
+  message: { success: false, message: 'Too many login attempts. Please wait a few minutes and try again.' },
   standardHeaders: true,
   legacyHeaders: false,
 })
