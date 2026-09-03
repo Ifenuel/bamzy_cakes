@@ -1,7 +1,93 @@
-node_modules
+# ═══════════════════════════════════════════════════════
+# BAMZY CAKES & CONFECTIONERY — .gitignore
+# ═══════════════════════════════════════════════════════
+
+# ─── Environment Variables (SECRETS — NEVER COMMIT) ───
 .env
 .env.local
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+
+# ─── Dependencies ───
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build Output ───
+dist/
+build/
+backend/dist/
+
+# ─── Uploads (User-uploaded images — regenerate via admin) ───
+backend/uploads/*
+!backend/uploads/.gitkeep
 uploads/*
 !uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+
+# ─── Logs ───
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# ─── Private Development Files ───
+.freebuff/
+.codebuff/
+
+# ─── OS Files ───
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── Editor Files ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.orig
+.project
+.settings/
+.classpath
+*.sublime-workspace
+*.sublime-project
+
+# ─── Temporary Files ───
+tmp/
+temp/
+
+# ─── Database ───
+*.sqlite
+*.sqlite3
+
+# ─── Coverage & Testing ───
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── Security Certs ───
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+
+# ─── Private Docs ───
+architecture.md
