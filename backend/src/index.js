@@ -31,7 +31,7 @@ const app = express()
 const PORT = process.env.PORT || 5000
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '')
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
@@ -46,7 +46,7 @@ app.use(helmet({
   },
 }))
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: [clientUrl, 'http://localhost:5173'],
   credentials: true,
 }))
 
