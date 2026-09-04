@@ -37,7 +37,7 @@ const STATUS_BADGE = {
 }
 
 export default function Account() {
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, logout, updateUser } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('overview')
   const [orders, setOrders] = useState([])
@@ -156,8 +156,8 @@ export default function Account() {
       case 'trainings': return <TrainingsTab trainings={trainings} navigate={navigate} fd={fd} />
       case 'favourites': return <FavouritesTab />
       case 'notifications': return <NotificationsTab />
-      case 'profile': return <ProfileTab user={user} />
-      case 'settings': return <SettingsTab user={user} onSave={(data) => apiUpdateProfile(data)} />
+      case 'profile': return <ProfileTab user={user} updateUser={updateUser} />
+      case 'settings': return <SettingsTab user={user} onSave={async (data) => { const updated = await apiUpdateProfile(data); updateUser(updated); return updated }} />
       default: return null
     }
   }
@@ -595,7 +595,7 @@ function FavouritesTab() {
 /* ═══════════════════════════════════════════════════════
    PROFILE TAB
    ═══════════════════════════════════════════════════════ */
-function ProfileTab({ user }) {
+function ProfileTab({ user, updateUser }) {
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || '')
@@ -635,10 +635,11 @@ function ProfileTab({ user }) {
 
   async function handleSave() {
     try {
-      await apiUpdateProfile({
+      const updated = await apiUpdateProfile({
         full_name: form.full_name,
         phone: form.phone,
       })
+      if (updated) updateUser(updated)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {

@@ -178,4 +178,26 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
   }
 })
 
+// ── Admin: View all customer wishlists ──
+router.get('/wishlists', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT w.id, w.created_at as "createdAt",
+              w.product_id as "productId",
+              p.name as "productName", p.price as "productPrice",
+              p.image_url as "productImage", p.category as "productCategory",
+              u.id as "customerId", u.full_name as "customerName",
+              u.email as "customerEmail", u.phone as "customerPhone"
+       FROM wishlists w
+       JOIN products p ON w.product_id = p.id
+       JOIN users u ON w.customer_id = u.id
+       ORDER BY w.created_at DESC`
+    )
+    return success(res, result.rows)
+  } catch (err) {
+    console.error('Admin wishlists error:', err.message)
+    return error(res, 'Failed to load wishlists', 500)
+  }
+})
+
 export default router

@@ -310,6 +310,11 @@ export async function apiCheckWishlist(productId) {
   return request('/customers/wishlist/check/' + productId)
 }
 
+// Admin wishlists
+export async function apiGetAdminWishlists() {
+  return request('/admin/wishlists')
+}
+
 // Payments (Paystack)
 export async function apiInitializePayment(body) {
   return request('/payments/initialize', { method: 'POST', body: JSON.stringify(body) })
