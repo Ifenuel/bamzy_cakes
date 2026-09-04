@@ -113,7 +113,7 @@ export async function forgotPassword(email) {
   }
   
   console.log(`[PASSWORD RESET] Email: ${email}, Link: ${resetLink}, Sent: ${emailSent}`)
-  return { sent: true, emailSent, resetToken: rawToken }
+  return { sent: true, found: true, emailSent, resetToken: rawToken }
 }
 
 export async function verifyEmail(token) {
