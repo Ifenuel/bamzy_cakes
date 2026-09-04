@@ -26,8 +26,9 @@ import LoadingSpinner from '../ui/LoadingSpinner.jsx'
 
 /* ── Error Boundary for admin pages ── */
 class AdminPageError extends Component {
-  constructor(props) { super(props); this.state = { hasError: false } }
-  static getDerivedStateFromError() { return { hasError: true } }
+  constructor(props) { super(props); this.state = { hasError: false, errorKey: '' } }
+  static getDerivedStateFromError(error) { return { hasError: true } }
+  componentDidCatch(error, info) { console.error('Admin page error:', error, info?.componentStack) }
   render() {
     if (this.state.hasError) {
       return (
@@ -36,8 +37,12 @@ class AdminPageError extends Component {
             <span className="text-4xl">⚠️</span>
             <h2 className="mt-4 font-heading text-xl font-bold text-ink">Something went wrong</h2>
             <p className="mt-2 text-sm text-ink-muted">This page encountered an error. Try refreshing.</p>
-            <button onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
-              className="mt-4 rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white">Reload Page</button>
+            <div className="mt-4 flex gap-3 justify-center">
+              <button onClick={() => this.setState({ hasError: false })}
+                className="rounded-full border border-lilac-soft bg-white px-5 py-2.5 text-sm font-semibold text-ink-muted hover:bg-lilac-soft">Go Back</button>
+              <button onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+                className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white">Reload Page</button>
+            </div>
           </div>
         </div>
       )

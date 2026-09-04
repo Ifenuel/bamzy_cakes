@@ -146,7 +146,7 @@ export default function AdminAnalytics() {
     )
   }
 
-  const maxRevenue = Math.max(...revenue.map((r) => r.revenue), 1)
+  const maxRevenue = revenue.length > 0 ? Math.max(...revenue.map((r) => r.revenue || 0), 1) : 1
 
   /* ── Pie chart data for categories ──────────────────── */
   const categoryPieData = (products?.categoryPerformance || []).map((c, i) => ({

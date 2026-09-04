@@ -99,15 +99,21 @@ router.get('/report', requireAdmin, async (req, res) => {
   }
 })
 
-// Admin: Clean database — remove all test data except admin and Ada
+// Admin: Clean database — remove all test/fake data, keep real accounts
 router.post('/cleanup', requireAdmin, async (req, res) => {
   try {
-    // Keep these emails
-    const keepEmails = ['admin@bamzycakes.com', 'ada@example.com']
+    // Keep these real emails — NEVER delete them
+    const keepEmails = [
+      'admin@bamzycakes.com',
+      'ada@example.com',
+      'Bamzycakes621@gmail.com',
+      'bamzycakes621@gmail.com',
+    ]
     
-    // 1. Get IDs of users to keep
+    // 1. Get IDs of users to keep (all non-test users)
     const keepUsers = await pool.query(
-      'SELECT id FROM users WHERE email = ANY($1)',
+      `SELECT id FROM users WHERE email = ANY($1) 
+       OR (email NOT LIKE '%test%' AND email NOT LIKE '%fake%' AND email NOT LIKE '%example.com' AND role != 'admin')`,
       [keepEmails]
     )
     const keepIds = keepUsers.rows.map(r => r.id)
@@ -144,7 +150,7 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     
     // 5. Delete all bookings with test emails
     await pool.query(
-      "DELETE FROM bookings WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
+      "DELETE FROM event_bookings WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
     )
     
     // 6. Delete training registrations for fake users
@@ -158,10 +164,15 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       "DELETE FROM newsletter_subscribers WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
     )
     
-    // 8. Delete fake users (except admin and Ada)
+    // 7b. Delete wishlists for fake users
+    await pool.query(
+      'DELETE FROM wishlists WHERE customer_id != ALL($1)',
+      [keepIds]
+    )
+    
+    // 8. Delete only fake/test users (keep all real users)
     const deletedUsers = await pool.query(
-      'DELETE FROM users WHERE id != ALL($1) AND role != $2',
-      [keepIds, 'admin']
+      "DELETE FROM users WHERE (email LIKE '%test%' OR email LIKE '%fake%' OR email = 'test@example.com') AND role != 'admin'"
     )
     
     return success(res, {
