@@ -4,6 +4,7 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'bamzycakes621@gmail.com'
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Bamzy Cakes & Confectionery'
 const CLIENT_URL = process.env.CLIENT_URL || 'https://bamzy-cakes.vercel.app'
+const LOGO_URL = `${CLIENT_URL}/logo.jpg`
 
 let client = null
 
@@ -35,6 +36,7 @@ export async function sendOtpEmail(toEmail, otpCode, userName) {
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
+              <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
               <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
               <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
             </td>
@@ -241,20 +243,26 @@ export async function sendPasswordResetEmail(toEmail, resetLink, userName) {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
         <tr>
-          <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
-            <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
+          <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
+            <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
+            <h1 style="color:#ffffff;font-size:26px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
+            <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
           </td>
         </tr>
         <tr>
           <td style="padding:40px 30px;">
-            <h2 style="color:#24172F;font-size:20px;margin:0 0 16px;">Password Reset Request</h2>
+            <h2 style="color:#24172F;font-size:22px;margin:0 0 16px;">Password Reset Request</h2>
             <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
               Hi ${userName || 'there'}, we received a request to reset your password. Click the button below to set a new one:
             </p>
-            <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:600;">
-              Reset Password
-            </a>
-            <p style="color:#A39BA9;font-size:13px;margin:24px 0 0;">This link expires in 5 minutes. If you didn't request this, please ignore this email.</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
+              <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+                Reset My Password
+              </a>
+            </td></tr></table>
+            <div style="background:#FFF5F9;border-radius:12px;padding:16px;margin:24px 0;">
+              <p style="color:#A39BA9;font-size:13px;margin:0;text-align:center;">⏰ This link expires in <strong style="color:#F04B8A;">5 minutes</strong>. If you didn't request this, please ignore this email.</p>
+            </div>
           </td>
         </tr>
       </table>
@@ -334,6 +342,7 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
       <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
         <tr>
           <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
+            <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
             <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
             <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;letter-spacing:2px;text-transform:uppercase;">Newsletter</p>
           </td>
@@ -418,6 +427,7 @@ export async function sendOrderConfirmation(toEmail, order) {
       <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
+          <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
           <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Order Confirmed! 🎉</h1>
           <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:8px 0 0;">Thank you for your order</p>
         </td></tr>
@@ -501,6 +511,7 @@ export async function sendContactMessage({ name, email, phone, subject, message 
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
         <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
+          <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
           <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">New Contact Message</h1>
           <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;">From Bamzy Cakes Website</p>
         </td></tr>
