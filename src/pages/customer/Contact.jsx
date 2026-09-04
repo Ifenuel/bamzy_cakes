@@ -63,7 +63,7 @@ export default function Contact() {
     if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = {}
     if (!form.name.trim()) errs.name = 'Name is required'

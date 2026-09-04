@@ -150,7 +150,7 @@ export default function Account() {
   /* ─── Sidebar content per tab ─── */
   function renderContent() {
     switch (tab) {
-      case 'overview': return <OverviewTab orders={orders} bookings={bookings} trainings={trainings} insights={insights} navigate={navigate} fd={fd} />
+      case 'overview': return <OverviewTab orders={orders} bookings={bookings} trainings={trainings} insights={insights} navigate={navigate} setTab={setTab} fd={fd} />
       case 'orders': return <OrdersTab orders={orders} fd={fd} />
       case 'bookings': return <BookingsTab bookings={bookings} navigate={navigate} fd={fd} />
       case 'trainings': return <TrainingsTab trainings={trainings} navigate={navigate} fd={fd} />
@@ -298,7 +298,7 @@ export default function Account() {
 /* ═══════════════════════════════════════════════════════
    OVERVIEW TAB
    ═══════════════════════════════════════════════════════ */
-function OverviewTab({ orders, bookings, trainings, insights, navigate, fd }) {
+function OverviewTab({ orders, bookings, trainings, insights, navigate, setTab, fd }) {
   const cards = [
     { label: 'My Orders', value: insights.totalOrders, icon: ClipboardList, color: 'from-lilac to-lilac-deep', action: 'View all orders →', tab: 'orders' },
     { label: 'Upcoming Bookings', value: insights.upcomingBookings, icon: CalendarCheck, color: 'from-pink to-pink/80', action: 'View bookings →', tab: 'bookings' },
@@ -317,7 +317,7 @@ function OverviewTab({ orders, bookings, trainings, insights, navigate, fd }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             className="rounded-2xl border border-lilac-soft/60 bg-white p-4 shadow-xs sm:p-5 cursor-pointer hover:shadow-soft transition-shadow"
-            onClick={() => c.tab && navigate('/account')}
+            onClick={() => c.tab && setTab(c.tab)}
           >
             <div className={'mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ' + c.color + ' text-white'}>
               <c.icon size={20} />
@@ -334,7 +334,7 @@ function OverviewTab({ orders, bookings, trainings, insights, navigate, fd }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading text-lg font-bold text-ink">Recent Orders</h2>
           {orders.length > 0 && (
-            <button onClick={() => navigate('/account')} className="text-xs font-medium text-pink hover:underline">
+            <button onClick={() => setTab('orders')} className="text-xs font-medium text-pink hover:underline">
               View all <ChevronRight size={14} className="inline" />
             </button>
           )}
