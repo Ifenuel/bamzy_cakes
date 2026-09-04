@@ -1,9 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component } from 'react'
 import { MapPin, Edit3, Save, X, Plus, Trash2, Clock, DollarSign } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiGetAdminDeliveryZones, apiUpdateDeliveryZone, apiCreateDeliveryZone, apiDeleteDeliveryZone } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { useToast } from '../../components/ui/Toast.jsx'
+
+class DeliveryZonesError extends Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null } }
+  static getDerivedStateFromError(error) { return { hasError: true, error } }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="text-center max-w-md">
+            <span className="text-4xl">🗺️</span>
+            <h2 className="mt-4 font-heading text-xl font-bold text-ink">Delivery Zones Unavailable</h2>
+            <p className="mt-2 text-sm text-ink-muted">We couldn't load the delivery zones. Please refresh the page or try again later.</p>
+            <button onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+              className="mt-4 rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white">Try Again</button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 export default function AdminDeliveryZones() {
   const { showToast } = useToast()
@@ -128,6 +149,7 @@ export default function AdminDeliveryZones() {
   }
 
   return (
+    <DeliveryZonesError>
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -353,5 +375,6 @@ export default function AdminDeliveryZones() {
         </div>
       )}
     </div>
+    </DeliveryZonesError>
   )
 }
