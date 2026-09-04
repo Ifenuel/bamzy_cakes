@@ -78,6 +78,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [avatarError, setAvatarError] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dateRange, setDateRange] = useState('all')
 
   useEffect(() => {
     Promise.all([apiGetDashboard(), apiGetAllOrders(), apiGetAnalyticsOverview(30)])
@@ -89,6 +91,23 @@ export default function AdminDashboard() {
       })
       .catch(() => setIsLoading(false))
   }, [])
+
+  // Filter orders by search and date range
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = !searchQuery ||
+      (o.orderNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.customerName || '').toLowerCase().includes(searchQuery.toLowerCase())
+    if (!matchesSearch) return false
+    if (dateRange === 'all') return true
+    const orderDate = new Date(o.createdAt)
+    const now = new Date()
+    if (dateRange === 'today') return orderDate.toDateString() === now.toDateString()
+    if (dateRange === '7days') return (now - orderDate) <= 7 * 24 * 60 * 60 * 1000
+    if (dateRange === '30days') return (now - orderDate) <= 30 * 24 * 60 * 60 * 1000
+    if (dateRange === 'month') return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()
+    if (dateRange === 'year') return orderDate.getFullYear() === now.getFullYear()
+    return true
+  })
 
   if (isLoading) {
     return (
@@ -150,7 +169,7 @@ export default function AdminDashboard() {
   const bestSellers = analytics?.bestSellingProducts?.slice(0, 5) || []
 
   /* ── Recent orders ──────────────────────────────────────── */
-  const recentOrders = orders.slice(0, 5)
+  const recentOrders = filteredOrders.slice(0, 10)
 
   const fd = (d) => new Date(d).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })
 
@@ -163,14 +182,22 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-3">
           <input
             type="text"
-            placeholder="Search anything..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search orders by number or customer..."
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-lilac focus:outline-none focus:ring-1 focus:ring-lilac/20"
           />
-          <select className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-ink focus:border-lilac focus:outline-none">
-            <option>Aug 1 - Aug 26, 2025</option>
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>This year</option>
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-ink focus:border-lilac focus:outline-none"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
           </select>
           {/* Admin avatar in header */}
           {user?.avatar_url && !avatarError ? (
@@ -299,7 +326,7 @@ export default function AdminDashboard() {
         {/* Recent Orders */}
         <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-ink">Recent Orders</h3>
+            <h3 className="text-sm font-semibold text-ink">Recent Orders {searchQuery || dateRange !== 'all' ? `(${filteredOrders.length} found)` : ''}</h3>
             <a href="/admin/orders" className="text-[11px] font-medium text-pink hover:text-lilac-deep">
               View All
             </a>

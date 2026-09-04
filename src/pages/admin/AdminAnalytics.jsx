@@ -24,10 +24,12 @@ import { formatNaira } from '../../utils/format.js'
 import PieChart from '../../components/ui/PieChart.jsx'
 
 const DATE_RANGES = [
+  { label: 'Today', value: 1 },
   { label: '7 Days', value: 7 },
   { label: '30 Days', value: 30 },
+  { label: 'This Month', value: 'month' },
   { label: '90 Days', value: 90 },
-  { label: 'This Year', value: 365 },
+  { label: 'This Year', value: 'year' },
 ]
 
 const PIE_COLORS = ['#A97BD6', '#F04B8A', '#6F4AA8', '#FBD7E7', '#22C55E', '#F59E0B', '#3B82F6', '#EF4444']
@@ -80,14 +82,21 @@ export default function AdminAnalytics() {
   const [trainings, setTrainings] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Convert special date range values to actual day counts
+  const actualDays = days === 'month'
+    ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+    : days === 'year'
+    ? 365
+    : Number(days)
+
   useEffect(() => {
     setIsLoading(true)
     Promise.all([
-      apiGetAnalyticsOverview(days),
-      apiGetRevenueAnalytics(days),
-      apiGetProductAnalytics(days),
-      apiGetOrderAnalytics(days),
-      apiGetCustomerAnalytics(days),
+      apiGetAnalyticsOverview(actualDays),
+      apiGetRevenueAnalytics(actualDays),
+      apiGetProductAnalytics(actualDays),
+      apiGetOrderAnalytics(actualDays),
+      apiGetCustomerAnalytics(actualDays),
       apiGetBookingAnalytics(),
       apiGetTrainingAnalytics(),
     ])
