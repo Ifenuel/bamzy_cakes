@@ -444,7 +444,6 @@ function OrdersTab({ orders, fd }) {
   return (
     <div>
       <h2 className="font-heading text-xl font-bold text-ink mb-4">My Orders</h2>
-      <h2 className="font-heading text-xl font-bold text-ink mb-4">My Orders</h2>
       {orders.length === 0 ? (
         <EmptyState
           emoji="📦"

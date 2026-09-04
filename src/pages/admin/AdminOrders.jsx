@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ClipboardList, Search, Filter, ChevronDown, Package, Truck, CheckCircle, Clock, XCircle, Eye, RefreshCw } from 'lucide-react'
+import { ClipboardList, Search, ChevronDown, Package, Truck, CheckCircle, Clock, RefreshCw } from 'lucide-react'
 import { apiGetAllOrders, apiUpdateOrderStatus, getImgUrl } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
