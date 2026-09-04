@@ -273,6 +273,16 @@ export async function apiGetCustomers() {
   return request('/admin/customers')
 }
 
+export async function apiGetAdminActivity(limit = 20) {
+  return request('/admin/activity?limit=' + limit)
+}
+
+export async function apiGetAdminReport(period = 'daily', date) {
+  const params = new URLSearchParams({ period })
+  if (date) params.set('date', date)
+  return request('/admin/report?' + params.toString())
+}
+
 // Payments
 export async function apiGetPayments() {
   return request('/payments')

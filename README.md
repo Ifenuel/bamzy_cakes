@@ -1,178 +1,179 @@
-# Bamzy Cakes & Confectionery — Backend
+# Bamzy Cakes & Confectionery
 
-Node.js/Express + PostgreSQL API for the Bamzy Cakes ordering platform.
+> Premium online bakery platform — Order cakes, pastries, tiger nuts, book events, and register for baking trainings.
+
+**Live website:** [bamzy-cakes.vercel.app](https://bamzy-cakes.vercel.app)
+
+---
+
+## What This Project Does
+
+- **Online Shop** — Browse and order cakes, pastries, tiger nuts, drinks
+- **Event Booking** — Book birthdays, weddings, corporate events
+- **Training Registration** — Register for baking training classes
+- **Payment** — Pay with cards, bank transfer, or USSD via Paystack
+- **Newsletter** — Subscribe for updates, admin sends broadcasts via email
+- **Admin Dashboard** — Full business management: products, orders, bookings, analytics, reviews, settings
+
+---
 
 ## Tech Stack
 
-- **Runtime:** Node.js (ESM)
-- **Framework:** Express.js
-- **Database:** PostgreSQL (via `pg`)
-- **Auth:** JWT (jsonwebtoken + bcrypt)
-- **Validation:** express-validator
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, Vite 5, Tailwind CSS, Framer Motion |
+| **Backend** | Node.js, Express.js, PostgreSQL |
+| **Database** | Supabase (PostgreSQL) |
+| **Payments** | Paystack |
+| **Email** | Brevo (Sendinblue) |
+| **Image Storage** | Cloudinary |
+| **Hosting** | Vercel (frontend) + Railway (backend) |
 
-## Setup
+---
 
-### 1. Install dependencies
+## Quick Start (Development)
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database (or Supabase account)
+
+### Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/Ifenuel/bamzy_cakes.git
+cd bamzy-cakes
+
+# Install frontend dependencies
+npm install
+
+# Install backend dependencies
 cd backend
 npm install
-```
 
-### 2. Configure environment
-
-```bash
+# Configure backend environment
 cp .env.example .env
-```
+# Edit .env with your database credentials
 
-Edit `.env` with your PostgreSQL credentials:
-
-```
-DATABASE_URL=postgresql://postgres:password@localhost:5432/bamzy_cakes
-JWT_SECRET=your-secret-key
-PORT=5000
-CLIENT_URL=http://localhost:5173
-```
-
-### 3. Create the database
-
-```bash
-createdb bamzy_cakes
-```
-
-### 4. Run migrations
-
-```bash
+# Run database migrations
 npm run migrate
-```
 
-### 5. Seed sample data
-
-```bash
+# Seed sample data
 npm run seed
-```
 
-### 6. Start the server
+# Start backend (Terminal 1)
+npm run dev
 
-```bash
+# Start frontend (Terminal 2 - new terminal)
+cd ..
 npm run dev
 ```
 
-The API runs on `http://localhost:5000`.
+---
 
-## Test Credentials
+## Project Structure
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@bamzycakes.com | admin123 |
-| Customer | ada@example.com | customer123 |
+```
+bamzy-cakes/
+├── src/                    # Frontend (React)
+│   ├── pages/customer/     # Customer-facing pages
+│   ├── pages/admin/        # Admin dashboard pages
+│   ├── components/         # Reusable UI components
+│   ├── context/            # React context (auth, cart)
+│   ├── utils/              # API calls, helpers
+│   └── styles/             # Tailwind CSS config
+├── backend/                # Backend (Node.js/Express)
+│   ├── src/
+│   │   ├── routes/         # API route handlers
+│   │   ├── controllers/    # Business logic
+│   │   ├── services/       # Email, payment, auth
+│   │   ├── middleware/      # Auth, validation, error handling
+│   │   ├── config/         # Database, Cloudinary
+│   │   └── db/             # Migrations, seed data
+│   └── .env.example        # Environment template
+├── architecture.md         # Detailed architecture docs (not in git)
+└── README.md               # This file
+```
+
+---
 
 ## API Endpoints
 
-### Auth
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | /api/auth/register | Public | Register customer |
-| POST | /api/auth/login | Public | Login |
-| GET | /api/auth/me | Required | Get current user |
-| PUT | /api/auth/me | Required | Update profile |
+### Public (No Auth Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register customer |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/forgot-password` | Request password reset |
+| POST | `/api/auth/reset-password` | Reset password |
+| GET | `/api/products` | List products |
+| GET | `/api/products/categories` | List categories |
+| POST | `/api/orders` | Create order |
+| POST | `/api/bookings` | Create event booking |
+| GET | `/api/trainings` | List training classes |
+| POST | `/api/newsletter/subscribe` | Subscribe to newsletter |
+| POST | `/api/reviews` | Submit review (auth required) |
 
-### Products
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/products | Public | List products (supports ?category, ?search, ?sort) |
-| GET | /api/products/categories | Public | List categories |
-| GET | /api/products/:id | Public | Get product by ID |
-| GET | /api/products/slug/:slug | Public | Get product by slug |
-| POST | /api/products | Admin | Create product |
-| PUT | /api/products/:id | Admin | Update product |
-| DELETE | /api/products/:id | Admin | Delete product |
+### Admin Only
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/dashboard` | Dashboard stats |
+| GET | `/api/admin/customers` | Customer list |
+| POST | `/api/products` | Create product |
+| PUT | `/api/products/:id` | Update product |
+| DELETE | `/api/products/:id` | Delete product |
+| PATCH | `/api/orders/admin/:id/status` | Update order status |
+| POST | `/api/upload/:type` | Upload image to Cloudinary |
+| PUT | `/api/settings` | Update business settings |
 
-### Orders
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | /api/orders | Public | Create order (calculates prices server-side) |
-| GET | /api/orders | Required | Get customer's orders |
-| GET | /api/orders/:id | Required | Get order (owner or admin) |
-| GET | /api/orders/admin/all | Admin | Get all orders |
-| PATCH | /api/orders/admin/:id/status | Admin | Update order status |
+---
 
-### Event Bookings
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | /api/bookings | Public | Create booking |
-| GET | /api/bookings/:id | Public | Get booking |
-| GET | /api/bookings/admin/all | Admin | Get all bookings |
-| PATCH | /api/bookings/admin/:id/status | Admin | Update booking status |
+## Deployment
 
-### Trainings
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/trainings | Public | List trainings |
-| GET | /api/trainings/:id | Public | Get training |
-| POST | /api/trainings/:id/register | Public | Register for training |
-| POST | /api/trainings | Admin | Create training |
-| PUT | /api/trainings/:id | Admin | Update training |
-| DELETE | /api/trainings/:id | Admin | Delete training |
+### Frontend (Vercel)
+1. Connect GitHub repo to Vercel
+2. Set environment variable: `VITE_API_URL` = your Railway backend URL
+3. Deploy automatically on push
 
-### Customer Account
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/account | Required | Get account info (orders, bookings, trainings) |
-| PUT | /api/account | Required | Update account |
+### Backend (Railway)
+1. Connect GitHub repo to Railway
+2. Set environment variables (see `backend/.env.example`)
+3. Deploy automatically on push
 
-### Admin
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/admin/dashboard | Admin | Dashboard stats |
-| GET | /api/admin/customers | Admin | Customer list |
-
-### Payments
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/payments | Admin | Payment records |
-| POST | /api/payments/initialize | Public | Initialize payment (placeholder) |
-| GET | /api/payments/verify/:reference | Public | Verify payment (placeholder) |
-
-### Contact
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | /api/contact | Public | Send contact message |
-
-## Response Format
-
-**Success:**
-```json
-{ "success": true, "data": { ... } }
+### Required Environment Variables (Railway)
+```
+DATABASE_URL=postgresql://...
+JWT_SECRET=your-secret-key
+CLIENT_URL=https://bamzy-cakes.vercel.app
+PAYSTACK_SECRET_KEY=sk_test_...
+PAYSTACK_WEBHOOK_URL=https://your-backend.railway.app/api/payments/webhook
+BREVO_API_KEY=your-brevo-key
+BREVO_SENDER_EMAIL=bamzycakes621@gmail.com
+CLOUDINARY_CLOUD_NAME=pqgyfjto
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 ```
 
-**Error:**
-```json
-{ "success": false, "message": "Error description" }
-```
+---
 
-## Database Tables
+## Security Features
 
-1. `users` — Customers and admins
-2. `product_categories` — Cakes, Small Chops, Pastries, etc.
-3. `products` — Product listings
-4. `product_images` — Multiple images per product (future use)
-5. `orders` — Customer orders
-6. `order_items` — Individual items in an order
-7. `event_bookings` — Event catering bookings
-8. `trainings` — Training classes
-9. `training_registrations` — Training sign-ups
-10. `payments` — Payment records
-11. `customer_addresses` — Saved addresses (future use)
-12. `contact_messages` — Contact form submissions
-13. `business_settings` — Business configuration
+- Passwords encrypted with bcrypt
+- JWT authentication for protected routes
+- Admin-only routes with role verification
+- Server-side price calculation (never trusts frontend)
+- Rate limiting on API endpoints
+- SQL injection prevention (parameterized queries)
+- CORS protection
+- Helmet security headers
+- Cloudinary upload preset restrictions
 
-## Security
+---
 
-- Passwords hashed with bcrypt
-- JWT-based authentication
-- Role-based access control (customer/admin)
-- Server-side price calculation (never trusts frontend totals)
-- Stock validation with row-level locking
-- Parameterized SQL queries (no injection)
-- CORS configured for frontend origin only
+## License
+
+Private — Bamzy Cakes & Confectionery
+
+---
+
+*Built with ❤️ for Bamzy Cakes & Confectionery*

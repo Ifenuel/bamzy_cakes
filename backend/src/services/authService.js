@@ -74,10 +74,10 @@ export async function updateProfile(userId, { full_name, phone, avatar_url }) {
 }
 
 export async function forgotPassword(email) {
-  const result = await pool.query('SELECT id, email FROM users WHERE email = $1', [email])
+  const result = await pool.query('SELECT id, email, full_name FROM users WHERE email = $1', [email])
   if (result.rows.length === 0) {
-    // SECURITY: Don't reveal whether email exists
-    return { sent: true }
+    // Email not found — tell the caller so frontend can show a helpful message
+    return { sent: false, found: false }
   }
   const user = result.rows[0]
 

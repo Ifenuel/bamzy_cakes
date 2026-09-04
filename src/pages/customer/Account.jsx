@@ -20,6 +20,7 @@ const TABS = [
   { key: 'bookings', label: 'My Bookings', icon: CalendarCheck },
   { key: 'trainings', label: 'My Trainings', icon: GraduationCap },
   { key: 'favourites', label: 'Favourites', icon: Heart },
+  { key: 'notifications', label: 'Notifications', icon: Bell },
   { key: 'profile', label: 'Profile', icon: UserCircle },
   { key: 'settings', label: 'Settings', icon: Settings },
 ]
@@ -154,6 +155,7 @@ export default function Account() {
       case 'bookings': return <BookingsTab bookings={bookings} navigate={navigate} fd={fd} />
       case 'trainings': return <TrainingsTab trainings={trainings} navigate={navigate} fd={fd} />
       case 'favourites': return <FavouritesTab />
+      case 'notifications': return <NotificationsTab />
       case 'profile': return <ProfileTab user={user} />
       case 'settings': return <SettingsTab user={user} onSave={(data) => apiUpdateProfile(data)} />
       default: return null
@@ -721,22 +723,77 @@ function ProfileTab({ user }) {
 /* ═══════════════════════════════════════════════════════
    SETTINGS TAB
    ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   NOTIFICATIONS TAB
+   ═══════════════════════════════════════════════════════ */
+function NotificationsTab() {
+  const [notifications, setNotifications] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    apiGetNotifications().then((data) => { setNotifications(data); setIsLoading(false) }).catch(() => setIsLoading(false))
+  }, [])
+
+  const unreadCount = notifications.filter(n => !n.isRead).length
+
+  async function handleMarkAllRead() {
+    try {
+      await apiMarkAllNotificationsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    } catch {}
+  }
+
+  async function handleMarkRead(id) {
+    try {
+      await apiMarkNotificationRead(id)
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+    } catch {}
+  }
+
+  if (isLoading) return <LoadingSpinner label="Loading notifications..." />
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-ink">Notifications</h2>
+          <p className="text-sm text-ink-muted">Order updates, booking confirmations, and more.</p>
+        </div>
+        {unreadCount > 0 && (
+          <button onClick={handleMarkAllRead} className="text-xs font-medium text-pink hover:underline">Mark all read</button>
+        )}
+      </div>
+      {notifications.length === 0 ? (
+        <EmptyState emoji="🔔" text="No notifications yet." subtext="You will be notified when your orders are updated." />
+      ) : (
+        <div className="space-y-2">
+          {notifications.map((n) => (
+            <div key={n.id} onClick={() => !n.isRead && handleMarkRead(n.id)}
+              className={`flex items-start gap-3 rounded-xl border p-4 transition-colors cursor-pointer ${n.isRead ? 'border-lilac-soft bg-white' : 'border-pink/30 bg-lilac-soft/40'}`}>
+              <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : '📢'}</span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{n.message}</p>
+                <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+              {!n.isRead && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-pink mt-1.5" />}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SettingsTab({ user, onSave }) {
   const { showToast } = useToast()
   const { logout } = useAuth()
   const navigate = useNavigate()
   const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '', phone: user?.phone || '' })
   const [isSavingProfile, setIsSavingProfile] = useState(false)
-  const [notifications, setNotifications] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteReason, setDeleteReason] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-
-  useEffect(() => {
-    apiGetNotifications().then(setNotifications).catch(() => {})
-  }, [])
-
-  const unreadCount = notifications.filter(n => !n.isRead).length
 
   async function handleSaveProfile() {
     setIsSavingProfile(true)
@@ -761,20 +818,6 @@ function SettingsTab({ user, onSave }) {
       showToast(err.message || 'Failed to delete account', 'error')
     }
     setIsDeleting(false)
-  }
-
-  async function handleMarkAllRead() {
-    try {
-      await apiMarkAllNotificationsRead()
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
-    } catch {}
-  }
-
-  async function handleMarkRead(id) {
-    try {
-      await apiMarkNotificationRead(id)
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
-    } catch {}
   }
 
   const ic = 'w-full rounded-xl border border-lilac-soft bg-white px-4 py-2.5 text-sm focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20'
@@ -808,40 +851,6 @@ function SettingsTab({ user, onSave }) {
             <Save size={16} /> {isSavingProfile ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
-      </div>
-
-      {/* Notifications */}
-      <div className="rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Bell size={18} className="text-lilac" />
-            <h3 className="font-heading text-base font-semibold text-ink">Notifications</h3>
-            {unreadCount > 0 && (
-              <span className="rounded-full bg-pink px-2 py-0.5 text-[10px] font-bold text-white">{unreadCount}</span>
-            )}
-          </div>
-          {unreadCount > 0 && (
-            <button onClick={handleMarkAllRead} className="text-xs font-medium text-pink hover:underline">Mark all read</button>
-          )}
-        </div>
-        {notifications.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-muted">No notifications yet.</p>
-        ) : (
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {notifications.map((n) => (
-              <div key={n.id} onClick={() => !n.isRead && handleMarkRead(n.id)}
-                className={`flex items-start gap-3 rounded-lg p-3 transition-colors cursor-pointer ${n.isRead ? 'bg-gray-50' : 'bg-lilac-soft/40 hover:bg-lilac-soft/60'}`}>
-                <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : '📢'}</span>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
-                  <p className="text-xs text-ink-muted mt-0.5 line-clamp-2">{n.message}</p>
-                  <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-                {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-pink mt-1" />}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Account Info */}

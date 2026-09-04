@@ -3,6 +3,7 @@ import { BrevoClient } from '@getbrevo/brevo'
 const BREVO_API_KEY = process.env.BREVO_API_KEY
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'bamzycakes621@gmail.com'
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Bamzy Cakes & Confectionery'
+const CLIENT_URL = process.env.CLIENT_URL || 'https://bamzy-cakes.vercel.app'
 
 let client = null
 
@@ -177,7 +178,7 @@ export async function sendWelcomeEmail(toEmail, userName) {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                 <tr>
                   <td align="center">
-                    <a href="http://localhost:5173/shop" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+                    <a href="${CLIENT_URL}/shop" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
                       Start Shopping
                     </a>
                   </td>
@@ -320,7 +321,10 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
   let sent = 0
   let failed = 0
 
-  const htmlContent = `
+  // Build newsletter HTML with a function so each subscriber gets their own unsubscribe link
+  function buildNewsletterHtml(subscriberEmail) {
+    const unsubscribeUrl = `${CLIENT_URL}/newsletter/unsubscribe?email=${encodeURIComponent(subscriberEmail)}`
+    return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -341,7 +345,7 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
             <hr style="border:none;border-top:1px solid #EDE1F8;margin:30px 0;">
             <p style="color:#A39BA9;font-size:12px;text-align:center;">
               Bamzy Cakes &amp; Confectionery &bull; Ibadan, Nigeria<br>
-              <a href="http://localhost:5173/newsletter/unsubscribe?email=EMAIL_PLACEHOLDER" style="color:#A97BD6;">Unsubscribe</a>
+              <a href="${unsubscribeUrl}" style="color:#A97BD6;">Unsubscribe</a>
             </p>
           </td>
         </tr>
@@ -350,24 +354,24 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
   </table>
 </body>
 </html>`
+  }
 
-  // Send in batches of 50
-  for (let i = 0; i < subscriberEmails.length; i += 50) {
-    const batch = subscriberEmails.slice(i, i + 50)
+  // Send individually so each subscriber gets a personalized unsubscribe link
+  for (const email of subscriberEmails) {
     const request = {
       sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-      to: batch.map(email => ({ email })),
+      to: [{ email }],
       subject,
-      htmlContent,
+      htmlContent: buildNewsletterHtml(email),
       textContent: `${subject}\n\n${message}`,
     }
 
     try {
       await brevo.transactionalEmails.sendTransacEmail(request)
-      sent += batch.length
+      sent++
     } catch (err) {
-      console.error(`[EMAIL] Newsletter batch failed:`, err.message || err)
-      failed += batch.length
+      console.error(`[EMAIL] Newsletter failed for ${email}:`, err.message || err)
+      failed++
     }
   }
 

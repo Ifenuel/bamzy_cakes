@@ -50,9 +50,9 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Analytics & Reports',
+    label: 'Reports',
     items: [
-      { label: 'Analytics & Reports', to: '/admin/analytics', icon: BarChart3 },
+      { label: 'Analytics', to: '/admin/analytics', icon: BarChart3 },
       { label: 'Inventory', to: '/admin/products', icon: PackageSearch },
     ],
   },

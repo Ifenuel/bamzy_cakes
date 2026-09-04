@@ -162,8 +162,11 @@ export async function forgotPassword(req, res) {
   try {
     const { email } = req.body
     if (!email) return error(res, 'Email is required', 400)
-    await authService.forgotPassword(email)
-    return success(res, { message: 'If an account exists with that email, you will receive a reset link.' })
+    const result = await authService.forgotPassword(email)
+    if (!result.found) {
+      return error(res, 'No account found with this email. Please register first.', 404)
+    }
+    return success(res, { message: 'A password reset link has been sent to your email. Check your inbox (and spam folder).' })
   } catch (err) {
     return safeError(res, err, 'Failed to process password reset', 500)
   }

@@ -10,6 +10,95 @@ const router = Router()
 router.get('/dashboard', requireAdmin, adminController.getDashboard)
 router.get('/customers', requireAdmin, customerController.getCustomers)
 
+// Admin: Recent activity feed (orders, bookings, training registrations)
+router.get('/activity', requireAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 20
+    const [recentOrders, recentBookings, recentTrainings, recentReviews] = await Promise.all([
+      pool.query(
+        `SELECT id, order_number as "orderNumber", customer_name as "customerName",
+                total, order_status as "orderStatus", payment_status as "paymentStatus",
+                created_at as "createdAt"
+         FROM orders ORDER BY created_at DESC LIMIT $1`, [limit]
+      ),
+      pool.query(
+        `SELECT id, full_name as "fullName", event_type as "eventType",
+                event_date as "eventDate", status, created_at as "createdAt"
+         FROM event_bookings ORDER BY created_at DESC LIMIT $1`, [limit]
+      ),
+      pool.query(
+        `SELECT tr.id, t.title as "trainingTitle", tr.full_name as "fullName",
+                tr.amount, tr.status as "registrationStatus", tr.created_at as "createdAt"
+         FROM training_registrations tr JOIN trainings t ON tr.training_id = t.id
+         ORDER BY tr.created_at DESC LIMIT $1`, [limit]
+      ),
+      pool.query(
+        `SELECT id, customer_name as "customerName", rating, text, is_approved as "isApproved",
+                created_at as "createdAt"
+         FROM reviews ORDER BY created_at DESC LIMIT $1`, [limit]
+      ),
+    ])
+    return success(res, {
+      orders: recentOrders.rows,
+      bookings: recentBookings.rows,
+      trainings: recentTrainings.rows,
+      reviews: recentReviews.rows,
+    })
+  } catch (err) {
+    console.error('Activity feed error:', err.message)
+    return error(res, 'Failed to load activity', 500)
+  }
+})
+
+// Admin: Daily/Monthly/Yearly report
+router.get('/report', requireAdmin, async (req, res) => {
+  try {
+    const { period = 'daily', date } = req.query
+    let dateFilter, dateParam
+    const now = date ? new Date(date) : new Date()
+
+    if (period === 'daily') {
+      dateFilter = "DATE(created_at) = $1"
+      dateParam = now.toISOString().split('T')[0]
+    } else if (period === 'monthly') {
+      dateFilter = "EXTRACT(MONTH FROM created_at) = $1 AND EXTRACT(YEAR FROM created_at) = $2"
+      dateParam = [now.getMonth() + 1, now.getFullYear()]
+    } else {
+      dateFilter = "EXTRACT(YEAR FROM created_at) = $1"
+      dateParam = [now.getFullYear()]
+    }
+
+    const params = Array.isArray(dateParam) ? dateParam : [dateParam]
+    const [orderStats, revenueStats, customerStats] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) as total,
+                COUNT(*) FILTER (WHERE order_status = 'completed') as completed,
+                COUNT(*) FILTER (WHERE order_status = 'cancelled') as cancelled
+         FROM orders WHERE ${dateFilter}`, params
+      ),
+      pool.query(
+        `SELECT COALESCE(SUM(total), 0) as revenue,
+                COALESCE(AVG(total), 0) as avg_order
+         FROM orders WHERE ${dateFilter} AND payment_status = 'successful'`, params
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT customer_id) as unique_customers
+         FROM orders WHERE ${dateFilter}`
+      ),
+    ])
+    return success(res, {
+      period,
+      date: dateParam,
+      orders: orderStats.rows[0],
+      revenue: revenueStats.rows[0],
+      customers: customerStats.rows[0],
+    })
+  } catch (err) {
+    console.error('Report error:', err.message)
+    return error(res, 'Failed to generate report', 500)
+  }
+})
+
 // Admin: Clean database — remove all test data except admin and Ada
 router.post('/cleanup', requireAdmin, async (req, res) => {
   try {
