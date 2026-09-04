@@ -17,7 +17,7 @@ export default function ProductCard({ product }) {
   const quantityInCart = items.find((item) => item.productId === product.id)?.quantity || 0
   const isLowStock = product.stock > 0 && product.stock <= 3
   const isMaxedInCart = quantityInCart >= product.stock
-  const hasImage = product.imageUrl && !imgError
+  const hasImage = product.imageUrl && !product.imageUrl.startsWith('/uploads/') && !imgError
 
   function handleAddToCart() {
     if (isSoldOut || isMaxedInCart) return

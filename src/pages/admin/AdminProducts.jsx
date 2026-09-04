@@ -189,7 +189,7 @@ export default function AdminProducts() {
         {filtered.map((p) => (
           <div key={p.id} className="flex items-center gap-4 rounded-xl border border-lilac-soft bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4">
             {/* Image */}
-            {p.imageUrl ? (
+            {p.imageUrl && !p.imageUrl.startsWith('/uploads/') ? (
               <img src={getImgUrl(p.imageUrl)} alt={p.name} className="h-14 w-14 shrink-0 rounded-lg object-cover sm:h-16 sm:w-16" />
             ) : (
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-soft to-lilac-soft sm:h-16 sm:w-16">

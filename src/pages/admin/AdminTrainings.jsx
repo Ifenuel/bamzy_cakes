@@ -122,7 +122,7 @@ export default function AdminTrainings() {
       <div className="mt-4 space-y-3">
         {trainings.map((t) => (
           <div key={t.id} className="flex items-center gap-3 rounded-xl2 border border-lilac-soft bg-white p-4 shadow-soft sm:p-5">
-            {(t.imageUrl || t.image_url) && (<img src={getImgUrl(t.imageUrl || t.image_url)} alt={t.title} className="h-16 w-16 shrink-0 rounded-lg object-cover" />)}
+            {(t.imageUrl || t.image_url) && !(t.imageUrl || t.image_url).startsWith('/uploads/') && (<img src={getImgUrl(t.imageUrl || t.image_url)} alt={t.title} className="h-16 w-16 shrink-0 rounded-lg object-cover" />)}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">{t.title}</p>
               <p className="text-xs text-ink-muted">{fd(t.date)} | {t.startTime}-{t.endTime} | {formatNaira(t.price)}</p>
