@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
                 If you have questions about this Privacy Policy or your personal data, please contact us:
               </p>
               <ul className="mt-3 space-y-1 text-sm text-ink-muted">
-                <li><strong>Email:</strong> hello@bamzycakes.com</li>
+                <li><strong>Email:</strong> bamzycakes621@gmail.com</li>
                 <li><strong>Phone:</strong> +234 703 337 4470</li>
                 <li><strong>WhatsApp:</strong> +234 703 337 4470</li>
               </ul>

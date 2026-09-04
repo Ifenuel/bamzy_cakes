@@ -172,6 +172,9 @@ export async function forgotPassword(req, res) {
     if (!result.found) {
       return error(res, 'No account found with this email. Please register first.', 404)
     }
+    if (!result.emailSent) {
+      return error(res, 'We could not send the email. Please check your email address or try again later.', 500)
+    }
     return success(res, { message: 'A password reset link has been sent to your email. Check your inbox (and spam folder).' })
   } catch (err) {
     return safeError(res, err, 'Failed to process password reset', 500)

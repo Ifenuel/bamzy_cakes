@@ -27,8 +27,8 @@ const CONTACT_METHODS = [
   {
     icon: Mail,
     label: 'Email',
-    value: 'hello@bamzycakes.com',
-    href: 'mailto:hello@bamzycakes.com',
+    value: 'bamzycakes621@gmail.com',
+    href: 'mailto:bamzycakes621@gmail.com',
     description: 'We reply within 24 hours',
     color: 'from-pink to-pink/80',
   },
