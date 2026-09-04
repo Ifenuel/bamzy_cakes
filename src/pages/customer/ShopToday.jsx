@@ -30,6 +30,7 @@ export default function ShopToday() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('recommended')
 
@@ -37,12 +38,19 @@ export default function ShopToday() {
 
   useEffect(() => {
     let isMounted = true
-    apiGetProducts().then((data) => {
-      if (isMounted) {
-        setProducts(data)
-        setIsLoading(false)
-      }
-    })
+    apiGetProducts()
+      .then((data) => {
+        if (isMounted) {
+          setProducts(data)
+          setIsLoading(false)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setError('Could not load products. Please check your connection and try again.')
+          setIsLoading(false)
+        }
+      })
     return () => { isMounted = false }
   }, [])
 
@@ -145,11 +153,22 @@ export default function ShopToday() {
         <PageContainer>
           {isLoading ? (
             <LoadingSpinner label="Loading today's treats..." />
+          ) : error ? (
+            <EmptyState
+              icon={ShoppingBag}
+              title="Something went wrong"
+              description={error}
+              action={
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              }
+            />
           ) : sortedProducts.length === 0 ? (
             <EmptyState
               icon={ShoppingBag}
-              title="Nothing delicious here yet"
-              description="Try another search or category."
+              title="No treats available right now"
+              description="We're busy baking something amazing! Please check back later — new treats are added daily."
               action={
                 <Button variant="outline" onClick={handleClearFilters}>
                   View All
