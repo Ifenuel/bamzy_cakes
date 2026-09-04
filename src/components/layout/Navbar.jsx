@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, X, Search, ShoppingBag, User, LogOut, ChevronRight } from 'lucide-react'
 import { useCart } from '../../context/CartContext.jsx'
