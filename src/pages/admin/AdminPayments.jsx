@@ -58,6 +58,8 @@ export default function AdminPayments() {
   const [payments, setPayments] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     apiGetPayments().then((data) => { setPayments(data); setIsLoading(false) }).catch(() => setIsLoading(false))
@@ -65,14 +67,23 @@ export default function AdminPayments() {
 
   const fd = (d) => new Date(d).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })
 
-  const filtered = payments.filter(p =>
-    (p.reference || '').toLowerCase().includes(search.toLowerCase()) ||
-    (p.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (p.orderNumber || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = payments.filter(p => {
+    const matchesSearch = (p.reference || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.orderNumber || '').toLowerCase().includes(search.toLowerCase())
+    if (!matchesSearch) return false
+    if (startDate && endDate) {
+      const pDate = new Date(p.createdAt)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      if (pDate < start || pDate > end) return false
+    }
+    return true
+  })
 
-  const totalSuccessful = payments.filter(p => p.status === 'successful').reduce((s, p) => s + (parseFloat(p.amount) || 0), 0)
-  const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + (parseFloat(p.amount) || 0), 0)
+  const totalSuccessful = filtered.filter(p => p.status === 'successful').reduce((s, p) => s + (parseFloat(p.amount) || 0), 0)
+  const totalPending = filtered.filter(p => p.status === 'pending').reduce((s, p) => s + (parseFloat(p.amount) || 0), 0)
 
   if (isLoading) {
     return (
@@ -118,15 +129,27 @@ export default function AdminPayments() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by reference, customer, or order..."
-          className="w-full rounded-xl border border-lilac-soft bg-white py-2.5 pl-9 pr-4 text-sm focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20"
-        />
+      {/* Search & Date Range */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by reference, customer, or order..."
+            className="w-full rounded-xl border border-lilac-soft bg-white py-2.5 pl-9 pr-4 text-sm focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs text-ink focus:border-lilac focus:outline-none" />
+          <span className="text-xs text-ink-muted">to</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+            className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs text-ink focus:border-lilac focus:outline-none" />
+          {(startDate || endDate) && (
+            <button onClick={() => { setStartDate(''); setEndDate('') }} className="text-xs font-medium text-pink hover:underline">Clear</button>
+          )}
+        </div>
       </div>
 
       {/* Table */}

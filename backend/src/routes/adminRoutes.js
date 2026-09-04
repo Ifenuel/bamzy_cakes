@@ -112,21 +112,33 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     )
     const keepIds = keepUsers.rows.map(r => r.id)
     
-    // 2. Delete order_items for fake orders
+    // 2. Delete payments for fake orders
+    await pool.query(
+      'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE customer_id != ALL($1))',
+      [keepIds]
+    )
+    
+    // 3. Delete order_items for fake orders
     await pool.query(
       'DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id != ALL($1))',
       [keepIds]
     )
     
-    // 3. Delete fake orders
+    // 4. Delete fake orders
     const deletedOrders = await pool.query(
       'DELETE FROM orders WHERE customer_id != ALL($1)',
       [keepIds]
     )
     
-    // 4. Delete fake reviews
+    // 5. Delete fake reviews
     await pool.query(
       'DELETE FROM reviews WHERE customer_id != ALL($1)',
+      [keepIds]
+    )
+    
+    // 6. Delete notifications for fake users
+    await pool.query(
+      'DELETE FROM notifications WHERE user_id != ALL($1)',
       [keepIds]
     )
     

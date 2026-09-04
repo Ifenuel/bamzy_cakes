@@ -8,6 +8,7 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
+  Search as SearchIcon,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiGetDashboard, apiGetAllOrders, apiGetAnalyticsOverview, getImgUrl } from '../../utils/api.js'
@@ -180,13 +181,22 @@ export default function AdminDashboard() {
           <h1 className="font-heading text-2xl font-bold text-ink">Dashboard Overview</h1>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search orders by number or customer..."
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-lilac focus:outline-none focus:ring-1 focus:ring-lilac/20"
-          />
+          <div className="relative flex items-center">
+            <button
+              onClick={() => { const el = document.getElementById('dashboard-search'); if (el) { el.focus(); el.classList.toggle('w-0'); el.classList.toggle('w-48'); el.classList.toggle('opacity-0'); el.classList.toggle('opacity-100') } }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-ink-muted hover:text-ink hover:border-lilac transition-colors"
+            >
+              <SearchIcon size={16} />
+            </button>
+            <input
+              id="dashboard-search"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search orders..."
+              className="absolute right-10 w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm opacity-0 focus:border-lilac focus:outline-none focus:ring-1 focus:ring-lilac/20 transition-all duration-300"
+            />
+          </div>
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
