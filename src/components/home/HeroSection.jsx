@@ -12,7 +12,7 @@ function HeroImage({ heroImage }) {
       <img
         src={src}
         alt="Beautiful Bamzy celebration cake"
-        className="aspect-[4/3] w-full object-cover sm:aspect-[4/3]"
+        className="w-full max-h-[500px] object-contain"
         loading="eager"
         onError={() => setError(true)}
       />

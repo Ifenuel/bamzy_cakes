@@ -65,7 +65,7 @@ export default function AdminFAQ() {
     setIsSaving(true)
     try {
       await apiUpdateSettings({ faq_categories: categories })
-      showToast('FAQ saved to database!', 'success')
+      showToast('FAQ saved!', 'success')
     } catch (err) {
       showToast(err.message || 'Failed to save', 'error')
     }

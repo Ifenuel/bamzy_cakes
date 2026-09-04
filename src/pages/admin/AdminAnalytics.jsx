@@ -205,7 +205,7 @@ export default function AdminAnalytics() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="admin-section-title">Analytics</h1>
-          <p className="mt-1 text-sm text-ink-muted">Real business insights from your database.</p>
+          <p className="mt-1 text-sm text-ink-muted">Track your sales, orders, and customer activity.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 rounded-full border border-lilac-soft bg-white p-1">
@@ -460,7 +460,7 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Inventory Insights */}
+      {/* Inventory Summary */}
       {products?.inventory && (
         <div className="stat-card">
           <div className="flex items-center gap-2">

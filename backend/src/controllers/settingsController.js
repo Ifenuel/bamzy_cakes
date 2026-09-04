@@ -5,11 +5,16 @@ import { safeError } from '../utils/safeError.js'
 export async function getSettings(req, res) {
   try {
     const result = await pool.query('SELECT key, value FROM business_settings ORDER BY id')
-    const settings = {}
-    for (const row of result.rows) {
+  const settings = {}
+  for (const row of result.rows) {
+    // Parse JSON-encoded values (they were JSON.stringify'd on save)
+    try {
+      settings[row.key] = JSON.parse(row.value)
+    } catch {
       settings[row.key] = row.value
     }
-    return success(res, settings)
+  }
+  return success(res, settings)
   } catch (err) {
     return safeError(res, err, 'Internal server error', 500)
   }
@@ -30,11 +35,16 @@ export async function updateSettings(req, res) {
 
     // Return updated settings
     const result = await pool.query('SELECT key, value FROM business_settings ORDER BY id')
-    const settings = {}
-    for (const row of result.rows) {
+  const settings = {}
+  for (const row of result.rows) {
+    // Parse JSON-encoded values (they were JSON.stringify'd on save)
+    try {
+      settings[row.key] = JSON.parse(row.value)
+    } catch {
       settings[row.key] = row.value
     }
-    return success(res, settings)
+  }
+  return success(res, settings)
   } catch (err) {
     return safeError(res, err, 'Internal server error', 500)
   }

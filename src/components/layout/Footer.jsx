@@ -51,7 +51,13 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
           {/* Brand column */}
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <img src="/logo.jpg" alt="Bamzy Cakes & Confectionery" className="mb-3 h-14 w-auto sm:h-16" />
+            <div className="flex items-center gap-3 mb-3">
+              <img src="/logo.jpg" alt="Bamzy Cakes & Confectionery" className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover ring-2 ring-lilac-soft/50" />
+              <div>
+                <p className="font-heading text-lg sm:text-xl font-bold text-ink">Bamzy Cakes</p>
+                <p className="text-xs text-ink-muted">& Confectionery</p>
+              </div>
+            </div>
             <p className="max-w-xs text-sm leading-relaxed text-ink-muted">
               Beautifully crafted cakes, pastries, tiger nuts and treats, made with love in Nigeria.
             </p>

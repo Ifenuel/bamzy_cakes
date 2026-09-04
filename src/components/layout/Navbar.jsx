@@ -78,11 +78,11 @@ export default function Navbar() {
             <img
               src="/logo.jpg"
               alt="Bamzy Cakes & Confectionery"
-              className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 rounded-full object-cover ring-2 ring-lilac-soft/50 transition-transform hover:scale-105"
+              className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 rounded-full object-cover ring-2 ring-lilac-soft/50 transition-transform hover:scale-105"
             />
             <div className="hidden sm:block">
-              <p className="font-heading text-sm sm:text-base lg:text-lg font-bold leading-tight text-ink">Bamzy</p>
-              <p className="text-[10px] sm:text-xs text-ink-muted leading-tight">Cakes & Confectionery</p>
+              <p className="font-heading text-base sm:text-lg lg:text-xl font-bold leading-tight text-ink">Bamzy Cakes</p>
+              <p className="text-[10px] sm:text-xs text-ink-muted leading-tight">& Confectionery</p>
             </div>
           </Link>
 

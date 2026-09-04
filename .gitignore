@@ -87,3 +87,6 @@ coverage/
 
 # ─── Private Docs ───
 architecture.md
+
+# Test images
+testimg*.jpg

@@ -184,7 +184,7 @@ export default function AdminSettings() {
         featured_sections: form.featured_sections,
         why_choose_bamzy: form.why_choose_bamzy,
       })
-      showToast('Settings saved to database!', 'success')
+       showToast('Settings saved!', 'success')
     } catch (err) {
       showToast(err.message || 'Failed to save settings', 'error')
     }
@@ -225,8 +225,7 @@ export default function AdminSettings() {
           <Settings size={20} />
         </span>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-ink">Settings</h1>
-          <p className="text-sm text-ink-muted">Manage your business information and website content.</p>
+          <h1 className="font-heading text-2xl font-bold text-ink">Settings</h1>           <p className="text-sm text-ink-muted">Update your business info, images, and website content.</p>
         </div>
       </div>
 
@@ -321,7 +320,7 @@ export default function AdminSettings() {
         <div className="space-y-4 rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
           <div>
             <h2 className="font-heading text-lg font-semibold">About Page Content</h2>
-            <p className="text-xs text-ink-muted mt-1">Edit what customers see on the About page (bamzycakes.com/about). Changes save to the database instantly.</p>
+            <p className="text-xs text-ink-muted mt-1">Edit what customers see on the About page. Changes save immediately.</p>
           </div>
 
           <div>
