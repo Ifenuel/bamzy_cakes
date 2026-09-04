@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Button from '../ui/Button.jsx'
 import PageContainer from '../layout/PageContainer.jsx'
-import { getImgUrl, apiTrackEvent } from '../../utils/api.js'
+import { getImgUrl, apiTrackEvent, apiGetSettings } from '../../utils/api.js'
 
-function HeroImage() {
+function HeroImage({ heroImage }) {
   const [error, setError] = useState(false)
-  const src = getImgUrl('/uploads/brand/bakery-hero.jpg')
+  const src = getImgUrl(heroImage || '/uploads/brand/bakery-hero.jpg')
   if (src && !error) {
     return (
       <img
@@ -41,8 +41,13 @@ export default function HeroSection() {
   const textY = useTransform(scrollYProgress, [0, 1], [0, 30])
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
 
+  const [heroImage, setHeroImage] = useState('')
+
   useEffect(() => {
     apiTrackEvent('page_view', { page: 'home' })
+    apiGetSettings().then((s) => {
+      if (s?.hero_image) setHeroImage(s.hero_image)
+    }).catch(() => {})
   }, [])
 
   return (
@@ -122,7 +127,7 @@ export default function HeroSection() {
           className="relative lg:col-span-7"
         >
           <div className="relative overflow-hidden rounded-2xl lg:rounded-none lg:rounded-tl-[3rem] lg:rounded-bl-[3rem]">
-            <HeroImage />
+            <HeroImage heroImage={heroImage} />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
