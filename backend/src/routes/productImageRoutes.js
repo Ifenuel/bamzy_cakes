@@ -3,7 +3,7 @@ import multer from 'multer'
 import pool from '../config/db.js'
 import { requireAdmin } from '../middleware/auth.js'
 import { success, error, notFound } from '../utils/response.js'
-import cloudinary from '../config/cloudinary.js'
+import { uploadImage, deleteImage } from '../config/cloudinary.js'
 
 const storage = multer.memoryStorage()
 
@@ -13,19 +13,6 @@ const fileFilter = (req, file, cb) => {
 }
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } })
-
-function uploadToCloud(buffer) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'bamzy-cakes/products', resource_type: 'image' },
-      (err, result) => {
-        if (err) return reject(err)
-        resolve(result)
-      }
-    )
-    stream.end(buffer)
-  })
-}
 
 const router = Router()
 
@@ -47,7 +34,7 @@ router.post('/:productId', requireAdmin, upload.single('image'), async (req, res
   try {
     if (!req.file) return error(res, 'No image file provided', 400)
 
-    const result = await uploadToCloud(req.file.buffer)
+    const result = await uploadImage(req.file.buffer, 'products')
     const imageUrl = result.secure_url
     const { productId } = req.params
 

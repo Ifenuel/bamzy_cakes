@@ -1,26 +1,60 @@
-// Cloudinary config — uses the SDK properly
-// The SDK handles signature generation, param encoding, and upload_stream correctly
+// Cloudinary config — unsigned upload preset, no SDK needed
+// Uses the bamzy_unsigned upload preset created via Cloudinary admin API
 
-import { v2 as cloudinary } from 'cloudinary'
+const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME
+const API_KEY = process.env.CLOUDINARY_API_KEY
+const API_SECRET = process.env.CLOUDINARY_API_SECRET
+const UPLOAD_PRESET = 'bamzy_unsigned'
 
-// Explicitly configure — don't rely on CLOUDINARY_URL auto-detection
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-const apiKey = process.env.CLOUDINARY_API_KEY
-const apiSecret = process.env.CLOUDINARY_API_SECRET
+if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+  console.error('[Cloudinary] Missing credentials!')
+} else {
+  console.log('[Cloudinary] Configured for cloud:', CLOUD_NAME, '(unsigned uploads)')
+}
 
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret,
-  secure: true,
-})
+/**
+ * Upload a buffer to Cloudinary via unsigned upload preset
+ * No signature needed — the preset handles auth
+ */
+export async function uploadImage(buffer, folder) {
+  const blob = new Blob([buffer], { type: 'image/jpeg' })
 
-// Verify config
-const cfg = cloudinary.config()
-console.log('[Cloudinary] Configured:', {
-  cloud: cfg.cloud_name,
-  key: cfg.api_key ? cfg.api_key.slice(-4) : 'MISSING',
-  secret: cfg.api_secret ? cfg.api_secret.slice(-4) : 'MISSING',
-})
+  const formData = new FormData()
+  formData.append('file', blob, 'image.jpg')
+  formData.append('upload_preset', UPLOAD_PRESET)
+  formData.append('folder', `bamzy-cakes/${folder}`)
 
-export default cloudinary
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`
+
+  const response = await fetch(url, { method: 'POST', body: formData })
+  const result = await response.json()
+
+  if (result.error) {
+    throw new Error(result.error.message || 'Cloudinary upload failed')
+  }
+
+  return {
+    secure_url: result.secure_url,
+    public_id: result.public_id,
+    width: result.width,
+    height: result.height,
+  }
+}
+
+/**
+ * Delete an image from Cloudinary using admin API (basic auth works for destroy)
+ */
+export async function deleteImage(publicId) {
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(`${API_KEY}:${API_SECRET}`).toString('base64'),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ public_id: publicId }),
+  })
+
+  return await response.json()
+}
