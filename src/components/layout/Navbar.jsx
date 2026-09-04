@@ -148,27 +148,31 @@ export default function Navbar() {
         </nav>
       </motion.header>
 
-      {/* Sidebar navigation — slides in from right */}
+      {/* Sidebar backdrop */}
       <AnimatePresence>
         {isMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/40"
-              onClick={() => setIsMenuOpen(false)}
-            />
+          <motion.div
+            key="sidebar-backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/40"
+            onClick={() => setIsMenuOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-            {/* Sidebar panel — right side, fixed width */}
-            <motion.aside
-              ref={sidebarRef}
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl"
-            >
+      {/* Sidebar panel — slides in from right */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.aside
+            key="sidebar-panel"
+            ref={sidebarRef}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl"
+          >
               {/* Sidebar header */}
               <div className="flex items-center justify-between border-b border-lilac-soft/60 px-5 py-4">
                 <div className="flex items-center gap-2">
@@ -286,8 +290,7 @@ export default function Navbar() {
                   Shop Today&apos;s Treats
                 </Link>
               </div>
-            </motion.aside>
-          </>
+          </motion.aside>
         )}
       </AnimatePresence>
 
