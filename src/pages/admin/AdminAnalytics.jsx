@@ -73,6 +73,9 @@ function exportToCSV(filename, headers, rows) {
 
 export default function AdminAnalytics() {
   const [days, setDays] = useState(30)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [customRange, setCustomRange] = useState(false)
   const [overview, setOverview] = useState(null)
   const [revenue, setRevenue] = useState([])
   const [products, setProducts] = useState(null)
@@ -82,12 +85,31 @@ export default function AdminAnalytics() {
   const [trainings, setTrainings] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Convert special date range values to actual day counts
-  const actualDays = days === 'month'
+  // Calculate actual days for API calls
+  const actualDays = customRange && startDate && endDate
+    ? Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1
+    : days === 'month'
     ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
     : days === 'year'
     ? 365
     : Number(days)
+
+  // Date range label for exports
+  const dateRangeLabel = customRange && startDate && endDate
+    ? `${startDate}_to_${endDate}`
+    : `${actualDays}days`
+
+  function handleCustomRange() {
+    if (startDate && endDate) {
+      setCustomRange(true)
+    }
+  }
+
+  function clearCustomRange() {
+    setCustomRange(false)
+    setStartDate('')
+    setEndDate('')
+  }
 
   useEffect(() => {
     setIsLoading(true)
@@ -146,7 +168,7 @@ export default function AdminAnalytics() {
   function handleExportRevenue() {
     const headers = ['Date', 'Revenue']
     const rows = revenue.map((r) => [r.date, r.revenue])
-    exportToCSV(`bamzy-revenue-${days}days.csv`, headers, rows)
+    exportToCSV(`bamzy-revenue-${dateRangeLabel}.csv`, headers, rows)
   }
 
   function handleExportProducts() {
@@ -157,7 +179,7 @@ export default function AdminAnalytics() {
       p.unitsSold,
       p.revenue,
     ])
-    exportToCSV(`bamzy-products-${days}days.csv`, headers, rows)
+    exportToCSV(`bamzy-products-${dateRangeLabel}.csv`, headers, rows)
   }
 
   function handleExportOrders() {
@@ -166,7 +188,7 @@ export default function AdminAnalytics() {
       s.status.replace('_', ' '),
       s.count,
     ])
-    exportToCSV(`bamzy-orders-${days}days.csv`, headers, rows)
+    exportToCSV(`bamzy-orders-${dateRangeLabel}.csv`, headers, rows)
   }
 
   function handleExportCustomers() {
@@ -176,7 +198,7 @@ export default function AdminAnalytics() {
       c.orderCount,
       c.totalSpent,
     ])
-    exportToCSV(`bamzy-customers-${days}days.csv`, headers, rows)
+    exportToCSV(`bamzy-customers-${dateRangeLabel}.csv`, headers, rows)
   }
 
   function handleExportFullReport() {
@@ -243,6 +265,40 @@ export default function AdminAnalytics() {
               </button>
             ))}
           </div>
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setCustomRange(false) }}
+              className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs text-ink focus:border-lilac focus:outline-none"
+              placeholder="Start date"
+            />
+            <span className="text-xs text-ink-muted">to</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setCustomRange(false) }}
+              className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs text-ink focus:border-lilac focus:outline-none"
+              placeholder="End date"
+            />
+            {startDate && endDate && (
+              <button
+                onClick={handleCustomRange}
+                className="rounded-lg bg-lilac-soft px-3 py-2 text-xs font-semibold text-lilac-deep hover:bg-lilac/20 transition-colors"
+              >
+                Apply
+              </button>
+            )}
+            {customRange && (
+              <button
+                onClick={clearCustomRange}
+                className="rounded-lg bg-pink-soft px-3 py-2 text-xs font-semibold text-pink hover:bg-pink/10 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <button
             onClick={handleExportFullReport}
             className="flex items-center gap-2 rounded-full bg-brand-gradient px-4 py-2 text-xs font-semibold text-white shadow-card transition-all hover:shadow-glow"
@@ -252,6 +308,12 @@ export default function AdminAnalytics() {
           </button>
         </div>
       </div>
+      {/* Active Date Range Indicator */}
+      {customRange && startDate && endDate && (
+        <div className="rounded-xl border border-lilac bg-lilac-soft/50 px-4 py-2 text-sm text-ink">
+          📅 Showing data from <strong>{new Date(startDate).toLocaleDateString('en-NG', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> to <strong>{new Date(endDate).toLocaleDateString('en-NG', { month: 'long', day: 'numeric', year: 'numeric' })}</strong>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
