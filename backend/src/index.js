@@ -134,7 +134,7 @@ const contactLimiter = rateLimit({
 })
 app.post('/api/contact', contactLimiter, async (req, res) => {
   try {
-    const { name, email, phone, message } = req.body
+    const { name, email, phone, subject, message } = req.body
     if (!name || !message) {
       return res.status(400).json({ success: false, message: 'Name and message are required' })
     }
@@ -145,7 +145,17 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
       'INSERT INTO contact_messages (name, email, phone, message) VALUES ($1, $2, $3, $4)',
       [sanitize(name), sanitize(email), sanitize(phone), sanitize(message)]
     )
-    res.json({ success: true, data: { message: 'Message sent successfully' } })
+
+    // Send email to the business owner via Brevo
+    let emailSent = false
+    try {
+      const { sendContactMessage } = await import('./services/emailService.js')
+      emailSent = await sendContactMessage({ name, email, phone, subject, message })
+    } catch (err) {
+      console.error('[CONTACT] Email send failed:', err.message)
+    }
+
+    res.json({ success: true, data: { message: 'Message sent successfully', emailSent } })
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to send message' })
   }

@@ -484,3 +484,62 @@ export async function sendOrderConfirmation(toEmail, order) {
     console.error(`[EMAIL] Order confirmation failed:`, err.message || err)
   }
 }
+
+/**
+ * Send contact form message to the business owner
+ */
+export async function sendContactMessage({ name, email, phone, subject, message }) {
+  if (!BREVO_API_KEY) return false
+  const brevo = getBrevoClient()
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
+        <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
+          <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">New Contact Message</h1>
+          <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;">From Bamzy Cakes Website</p>
+        </td></tr>
+        <tr><td style="padding:30px;">
+          <div style="background:#F8F4FD;border-radius:12px;padding:20px;margin-bottom:20px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">From</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${name}</span></td></tr>
+              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Email</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${email || 'Not provided'}</span></td></tr>
+              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Phone</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${phone || 'Not provided'}</span></td></tr>
+              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Subject</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;text-transform:capitalize;">${subject || 'General Enquiry'}</span></td></tr>
+            </table>
+          </div>
+          <p style="font-size:13px;font-weight:600;color:#1a1025;margin:0 0 8px;">Message:</p>
+          <div style="background:#fff;border:1px solid #EDE1F8;border-radius:12px;padding:16px;">
+            <p style="font-size:14px;color:#4a4458;line-height:1.7;margin:0;">${message.replace(/\n/g, '<br>')}</p>
+          </div>
+        </td></tr>
+        <tr><td style="background:#1a1025;padding:20px 30px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:0;">Bamzy Cakes & Confectionery — Website Contact Form</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+  try {
+    await brevo.transactionalEmails.sendTransacEmail({
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: SENDER_EMAIL }],
+      replyTo: { email: email || SENDER_EMAIL, name },
+      subject: `[Bamzy Contact] ${subject || 'General Enquiry'} — from ${name}`,
+      htmlContent,
+      textContent: `New contact message from ${name} (${email || 'no email'}):\n\n${message}`,
+    })
+    console.log(`[EMAIL] Contact message received from ${name} (${email})`)
+    return true
+  } catch (err) {
+    console.error(`[EMAIL] Contact form email failed:`, err.message || err)
+    return false
+  }
+}

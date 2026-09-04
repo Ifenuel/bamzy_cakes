@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import { useToast } from '../../components/ui/Toast.jsx'
+import { apiSendContact } from '../../utils/api.js'
 
 const CONTACT_METHODS = [
   {
@@ -72,12 +73,21 @@ export default function Contact() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
     setIsSending(true)
-    // Simulate sending
-    setTimeout(() => {
+    try {
+      await apiSendContact({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        subject: form.subject,
+        message: form.message,
+      })
       setSubmitted(true)
-      setIsSending(false)
       showToast('Message sent! We will get back to you soon.', 'success')
-    }, 800)
+    } catch (err) {
+      showToast(err.message || 'Failed to send message. Please try again.', 'error')
+    } finally {
+      setIsSending(false)
+    }
   }
 
   return (
