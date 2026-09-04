@@ -23,39 +23,41 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     )
     const keepIds = keepUsers.rows.map(r => r.id)
     
-    // 2. Delete fake orders (where user NOT in keep list)
-    const deletedOrders = await pool.query(
+    // 2. Delete order_items for fake orders
+    await pool.query(
       'DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id != ALL($1))',
       [keepIds]
     )
-    await pool.query(
+    
+    // 3. Delete fake orders
+    const deletedOrders = await pool.query(
       'DELETE FROM orders WHERE user_id != ALL($1)',
       [keepIds]
     )
     
-    // 3. Delete fake reviews
+    // 4. Delete fake reviews
     await pool.query(
       'DELETE FROM reviews WHERE customer_id != ALL($1)',
       [keepIds]
     )
     
-    // 4. Delete fake newsletter subscribers (keep real ones)
+    // 5. Delete all bookings with test emails
     await pool.query(
-      "DELETE FROM newsletter_subscribers WHERE email LIKE '%@test.com' OR email LIKE '%@example.com'"
+      "DELETE FROM bookings WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
     )
     
-    // 5. Delete fake bookings (uses email, not user_id)
+    // 6. Delete training registrations for fake users
     await pool.query(
-      "DELETE FROM bookings WHERE email NOT LIKE '%bamzycakes%' AND email != 'ada@example.com'"
-    )
-    
-    // 6. Delete fake training registrations
-    await pool.query(
-      'DELETE FROM training_registrations WHERE user_id != ALL($1)',
+      'DELETE FROM training_registrations WHERE customer_id != ALL($1)',
       [keepIds]
     )
     
-    // 7. Delete fake users (except admin and Ada)
+    // 7. Delete newsletter subscribers with test emails
+    await pool.query(
+      "DELETE FROM newsletter_subscribers WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
+    )
+    
+    // 8. Delete fake users (except admin and Ada)
     const deletedUsers = await pool.query(
       'DELETE FROM users WHERE id != ALL($1) AND role != $2',
       [keepIds, 'admin']
