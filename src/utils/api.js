@@ -293,6 +293,23 @@ export async function apiSendContact(body) {
   return request('/contact', { method: 'POST', body: JSON.stringify(body) })
 }
 
+// Wishlist
+export async function apiGetWishlist() {
+  return request('/customers/wishlist')
+}
+
+export async function apiAddToWishlist(productId) {
+  return request('/customers/wishlist/' + productId, { method: 'POST' })
+}
+
+export async function apiRemoveFromWishlist(productId) {
+  return request('/customers/wishlist/' + productId, { method: 'DELETE' })
+}
+
+export async function apiCheckWishlist(productId) {
+  return request('/customers/wishlist/check/' + productId)
+}
+
 // Payments (Paystack)
 export async function apiInitializePayment(body) {
   return request('/payments/initialize', { method: 'POST', body: JSON.stringify(body) })

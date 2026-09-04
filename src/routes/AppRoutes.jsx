@@ -19,6 +19,7 @@ const EventsBook = lazy(() => import('../pages/customer/EventsBook.jsx'))
 const About = lazy(() => import('../pages/customer/About.jsx'))
 const Contact = lazy(() => import('../pages/customer/Contact.jsx'))
 const Account = lazy(() => import('../pages/customer/Account.jsx'))
+const Wishlist = lazy(() => import('../pages/customer/Wishlist.jsx'))
 const Login = lazy(() => import('../pages/customer/Login.jsx'))
 const Register = lazy(() => import('../pages/customer/Register.jsx'))
 const ForgotPassword = lazy(() => import('../pages/customer/ForgotPassword.jsx'))
@@ -95,6 +96,7 @@ export default function AppRoutes() {
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

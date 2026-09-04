@@ -582,9 +582,9 @@ function FavouritesTab() {
       <h2 className="font-heading text-xl font-bold text-ink mb-4">My Favourites</h2>
       <EmptyState
         emoji="💗"
-        text="No favourites yet."
-        subtext="Browse our treats and save your favourites here."
-        cta={{ label: 'Browse Treats', to: '/shop' }}
+        text="View your saved treats."
+        subtext="Your wishlist is just a click away."
+        cta={{ label: 'View Wishlist', to: '/wishlist' }}
       />
     </div>
   )

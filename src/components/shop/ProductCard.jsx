@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingBag, Eye } from 'lucide-react'
+import { ShoppingBag, Eye, Heart } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { apiAddToWishlist, apiRemoveFromWishlist, apiCheckWishlist } from '../../utils/api.js'
 import Badge from '../ui/Badge.jsx'
 import { useCart } from '../../context/CartContext.jsx'
 import { useToast } from '../ui/Toast.jsx'
@@ -10,8 +12,33 @@ import { getImgUrl } from '../../utils/api.js'
 export default function ProductCard({ product }) {
   const { items, addItem } = useCart()
   const { showToast } = useToast()
+  const { isAuthenticated } = useAuth()
   const [justAdded, setJustAdded] = useState(false)
   const [imgError, setImgError] = useState(false)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && product.id) {
+      apiCheckWishlist(product.id).then(d => setIsWishlisted(d.isWishlisted)).catch(() => {})
+    }
+  }, [isAuthenticated, product.id])
+
+  async function toggleWishlist() {
+    if (!isAuthenticated) { showToast('Sign in to save favourites', 'error'); return }
+    try {
+      if (isWishlisted) {
+        await apiRemoveFromWishlist(product.id)
+        setIsWishlisted(false)
+        showToast('Removed from wishlist', 'success')
+      } else {
+        await apiAddToWishlist(product.id)
+        setIsWishlisted(true)
+        showToast('Added to wishlist', 'success')
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed', 'error')
+    }
+  }
 
   const isSoldOut = product.stock <= 0
   const quantityInCart = items.find((item) => item.productId === product.id)?.quantity || 0
@@ -50,8 +77,14 @@ export default function ProductCard({ product }) {
               </div>
             )}
           </div>
+          <button
+            onClick={(e) => { e.preventDefault(); toggleWishlist() }}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition-all hover:scale-110"
+          >
+            <Heart size={16} className={isWishlisted ? 'fill-pink text-pink' : 'text-ink-muted'} />
+          </button>
           {isSoldOut && (
-            <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+            <span className="absolute right-3 top-12 rounded-full bg-ink/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
               Sold Out
             </span>
           )}
