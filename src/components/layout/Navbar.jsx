@@ -169,6 +169,7 @@ export default function Navbar() {
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Sidebar header */}
               <div className="flex items-center justify-between border-b border-lilac-soft/60 px-5 py-4">
@@ -180,11 +181,11 @@ export default function Navbar() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-lilac-soft/60 hover:text-pink"
+                  onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false) }}
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-lilac-soft/60 hover:text-pink"
                   aria-label="Close menu"
                 >
-                  <X size={20} />
+                  <X size={22} />
                 </button>
               </div>
 

@@ -33,12 +33,38 @@ export async function requireAuth(req, res, next) {
 }
 
 export async function requireAdmin(req, res, next) {
-  await requireAuth(req, res, () => {
-    if (req.user.role !== 'admin') {
+  // First authenticate
+  const header = req.headers.authorization
+  if (!header || !header.startsWith('Bearer ')) {
+    return unauthorized(res, 'Authentication required')
+  }
+
+  try {
+    const token = header.split(' ')[1]
+    const decoded = verifyToken(token)
+
+    const result = await pool.query(
+      'SELECT id, full_name, email, phone, role, is_active FROM users WHERE id = $1',
+      [decoded.id]
+    )
+
+    if (result.rows.length === 0) {
+      return unauthorized(res, 'User not found')
+    }
+
+    if (!result.rows[0].is_active) {
+      return unauthorized(res, 'Account is deactivated')
+    }
+
+    if (result.rows[0].role !== 'admin') {
       return forbidden(res, 'Admin access required')
     }
+
+    req.user = result.rows[0]
     next()
-  })
+  } catch (err) {
+    return unauthorized(res, 'Invalid or expired token')
+  }
 }
 
 function forbidden(res, message) {
