@@ -6,7 +6,7 @@ import { getImgUrl, apiTrackEvent, apiGetSettings } from '../../utils/api.js'
 
 function HeroImage({ heroImage }) {
   const [error, setError] = useState(false)
-  const src = getImgUrl(heroImage || '/uploads/brand/bakery-hero.jpg')
+  const src = getImgUrl(heroImage)
   if (src && !error) {
     return (
       <img
@@ -19,13 +19,11 @@ function HeroImage({ heroImage }) {
     )
   }
   return (
-    <div className="upload-placeholder aspect-[4/3] w-full rounded-2xl">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-lilac/40">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21 15 16 10 5 21" />
-      </svg>
-      <span className="text-xs font-medium text-lilac/60">Hero Image</span>
+    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-gradient-to-br from-lilac-soft/60 via-pink-soft/40 to-cream">
+      <div className="text-center">
+        <p className="font-heading text-4xl font-bold text-lilac/30 sm:text-5xl">🧁</p>
+        <p className="mt-2 text-sm font-medium text-lilac/50">Upload a hero image in admin settings</p>
+      </div>
     </div>
   )
 }

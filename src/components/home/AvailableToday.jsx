@@ -53,8 +53,9 @@ export default function AvailableToday() {
           {isLoading ? (
             <LoadingSpinner label="Loading today's treats..." />
           ) : products.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-ink-muted">Check back soon for today&apos;s fresh treats.</p>
+            <div className="rounded-2xl border border-lilac-soft bg-brand-gradient-subtle py-16 text-center">
+              <p className="font-heading text-xl font-bold text-ink">Coming soon!</p>
+              <p className="mt-2 text-sm text-ink-muted">We&apos;re baking something amazing. Check back later for today&apos;s fresh treats.</p>
             </div>
           ) : (
             <>

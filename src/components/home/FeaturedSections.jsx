@@ -102,11 +102,14 @@ export default function FeaturedSections() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal preset="fadeUp" className="mx-auto max-w-lg text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-pink">
-            Explore
+            Explore Bamzy
           </p>
           <h2 className="font-heading text-3xl font-bold sm:text-4xl lg:text-5xl">
-            What are you looking for?
+            More than just cakes
           </h2>
+          <p className="mt-3 text-ink-muted">
+            From custom celebrations to hands-on baking classes — discover everything Bamzy has to offer.
+          </p>
         </ScrollReveal>
 
         {/* Editorial asymmetric grid */}

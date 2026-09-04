@@ -10,8 +10,10 @@ export default function Home() {
   return (
     <>
       <HeroSection />
+      <div className="border-b border-lilac-soft/30" />
       <AvailableToday />
       <FeaturedSections />
+      <div className="border-b border-lilac-soft/30" />
       <WhyChooseSection />
       <ReviewsSection />
       <NewsletterSection />
