@@ -37,13 +37,19 @@ export async function login({ email, password }) {
     'SELECT id, full_name, email, phone, role, password_hash, is_active, avatar_url FROM users WHERE email = $1',
     [email]
   )
-  if (result.rows.length === 0) return null
+  if (result.rows.length === 0) {
+    return { error: 'not_found' }
+  }
 
   const user = result.rows[0]
-  if (!user.is_active) return null
+  if (!user.is_active) {
+    return { error: 'inactive' }
+  }
 
   const valid = await bcrypt.compare(password, user.password_hash)
-  if (!valid) return null
+  if (!valid) {
+    return { error: 'wrong_password' }
+  }
 
   // eslint-disable-next-line no-unused-vars
   const { password_hash, ...safe } = user

@@ -278,14 +278,10 @@ export default function AdminSettings() {
         {/* Social Media */}
         <div className="space-y-4 rounded-xl border border-lilac-soft bg-white p-5 shadow-soft">
           <h2 className="font-heading text-lg font-semibold">Social Media</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink">Instagram</label>
               <input name="instagram" value={form.instagram} onChange={handleChange} className={ic} placeholder="https://instagram.com/bamzycakes" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink">Facebook</label>
-              <input name="facebook" value={form.facebook} onChange={handleChange} className={ic} placeholder="https://facebook.com/bamzycakes" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink">WhatsApp</label>

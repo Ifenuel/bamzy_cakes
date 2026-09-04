@@ -85,9 +85,16 @@ export default function Login() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-xl bg-error-soft px-4 py-3 text-center text-sm text-error"
+              className="mb-4 rounded-xl bg-error-soft px-4 py-3 text-sm text-error"
             >
-              {error}
+              <p className="text-center">{error}</p>
+              {error.toLowerCase().includes('no account found') && (
+                <p className="mt-2 text-center">
+                  <Link to="/register" className="font-semibold underline hover:text-lilac-deep">
+                    Create an account →
+                  </Link>
+                </p>
+              )}
             </motion.div>
           )}
 

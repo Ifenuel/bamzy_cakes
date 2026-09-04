@@ -87,8 +87,14 @@ export async function login(req, res) {
   try {
     const { email, password } = req.body
     const result = await authService.login({ email, password })
-    if (!result) {
-      return error(res, 'Invalid email or password', 401)
+    if (result.error === 'not_found') {
+      return error(res, 'No account found with this email. Please create an account first.', 404)
+    }
+    if (result.error === 'inactive') {
+      return error(res, 'This account has been deactivated. Please contact support.', 403)
+    }
+    if (result.error === 'wrong_password') {
+      return error(res, 'Incorrect password. Please try again or reset your password.', 401)
     }
     return success(res, result)
   } catch (err) {
