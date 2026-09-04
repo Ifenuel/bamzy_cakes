@@ -1,9 +1,9 @@
 import { Router } from 'express'
 import multer from 'multer'
 import pool from '../config/db.js'
-import { requireAuth, requireAdmin } from '../middleware/auth.js'
+import { requireAdmin } from '../middleware/auth.js'
 import { success, error, notFound } from '../utils/response.js'
-import cloudinary from '../config/cloudinary.js'
+import { uploadImage, deleteImage } from '../config/cloudinary.js'
 
 const storage = multer.memoryStorage()
 
@@ -13,19 +13,6 @@ const fileFilter = (req, file, cb) => {
 }
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } })
-
-async function uploadToCloud(buffer) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'bamzy-cakes/products', resource_type: 'image', quality: 'auto', format: 'jpg' },
-      (err, result) => {
-        if (err) return reject(err)
-        resolve(result)
-      }
-    )
-    stream.end(buffer)
-  })
-}
 
 const router = Router()
 
@@ -47,11 +34,10 @@ router.post('/:productId', requireAdmin, upload.single('image'), async (req, res
   try {
     if (!req.file) return error(res, 'No image file provided', 400)
 
-    const result = await uploadToCloud(req.file.buffer)
+    const result = await uploadImage(req.file.buffer, 'products')
     const imageUrl = result.secure_url
     const { productId } = req.params
 
-    // Check if this is the first image — if so, make it primary
     const existing = await pool.query('SELECT COUNT(*) FROM product_images WHERE product_id = $1', [productId])
     const isFirst = parseInt(existing.rows[0].count) === 0
 
@@ -62,13 +48,13 @@ router.post('/:productId', requireAdmin, upload.single('image'), async (req, res
       [productId, imageUrl, isFirst]
     )
 
-    // Also update the product's main image_url if this is the first image
     if (isFirst) {
       await pool.query('UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2 AND (image_url IS NULL = true)', [imageUrl, productId])
     }
 
     return success(res, imgResult.rows[0], 201)
   } catch (err) {
+    console.error('[ProductImage] Upload failed:', err.message)
     return error(res, 'Failed to save image: ' + err.message, 500)
   }
 })
