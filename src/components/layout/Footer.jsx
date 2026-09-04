@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Instagram, Facebook, MessageCircle } from 'lucide-react'
+import { Instagram, MessageCircle } from 'lucide-react'
 
 const FOOTER_COLUMNS = [
   {
@@ -40,7 +40,6 @@ const FOOTER_COLUMNS = [
 
 const SOCIALS = [
   { label: 'Instagram', icon: Instagram, href: 'https://instagram.com/bamzycakes', external: true },
-  { label: 'Facebook', icon: Facebook, href: '#', external: false },
   { label: 'WhatsApp', icon: MessageCircle, href: 'https://wa.me/2347033374470', external: true },
 ]
 

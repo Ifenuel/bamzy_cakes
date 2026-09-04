@@ -49,7 +49,7 @@ export default function ForgotPassword() {
             <h1 className="font-heading text-3xl font-bold text-ink">Check your email 💗</h1>
             <p className="mt-3 text-ink-muted">
               We sent a password reset link to <strong className="text-ink">{email}</strong>.
-              The link expires in 1 hour.
+              The link expires in 5 minutes.
             </p>
             <p className="mt-6 text-sm text-ink-muted">
               Didn&apos;t receive it? Check your spam folder, or{' '}

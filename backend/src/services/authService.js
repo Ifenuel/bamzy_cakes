@@ -2,9 +2,10 @@ import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import pool from '../config/db.js'
 import { generateToken } from '../utils/jwt.js'
+import { sendPasswordResetEmail } from './emailService.js'
 
 const SALT_ROUNDS = 10
-const RESET_TOKEN_EXPIRY_HOURS = 1
+const RESET_TOKEN_EXPIRY_MINUTES = 5
 
 export async function register({ full_name, email, phone, password, role, avatar_url }) {
   const hash = await bcrypt.hash(password, SALT_ROUNDS)
@@ -86,18 +87,22 @@ export async function forgotPassword(email) {
   // Generate a random token, store its hash
   const rawToken = crypto.randomBytes(32).toString('hex')
   const tokenHash = await bcrypt.hash(rawToken, SALT_ROUNDS)
-  const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000)
 
   await pool.query(
     'INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
     [user.id, tokenHash, expiresAt]
   )
 
-  // TODO: In production, send email with rawToken link
-  // For now, log it so dev can see it
-  console.log(`[PASSWORD RESET] Email: ${email}, Token: ${rawToken}, Expires: ${expiresAt}`)
+  // Send password reset email via Brevo
+  const clientUrl = process.env.CLIENT_URL || 'https://bamzy-cakes.vercel.app'
+  const resetLink = `${clientUrl}/reset-password?token=${rawToken}`
+  const userName = user.full_name || ''
+  sendPasswordResetEmail(email, resetLink, userName).catch(err => {
+    console.error('[PASSWORD RESET] Email send failed:', err.message)
+  })
 
-  return { sent: true, resetToken: rawToken } // resetToken returned only in dev
+  return { sent: true }
 }
 
 export async function verifyEmail(token) {

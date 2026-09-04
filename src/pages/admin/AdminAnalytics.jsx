@@ -36,17 +36,29 @@ const PIE_COLORS = ['#A97BD6', '#F04B8A', '#6F4AA8', '#FBD7E7', '#22C55E', '#F59
 function exportToCSV(filename, headers, rows) {
   // Add BOM for proper Excel Unicode support
   const BOM = '\uFEFF'
+  const now = new Date()
   const brandHeader = [
-    'BAMZY CAKES & CONFECTIONERY',
-    'Official Business Report',
-    'Generated: ' + new Date().toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    'Website: bamzycakes.com | Email: bamzycakes621@gmail.com',
+    '',
+    '═══════════════════════════════════════════════════',
+    '  BAMZY CAKES & CONFECTIONERY',
+    '  www.bamzycakes.com',
+    '═══════════════════════════════════════════════════',
+    '',
+    'Report: ' + filename.replace('.csv', '').replace(/-/g, ' ').toUpperCase(),
+    'Date: ' + now.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' }),
+    'Time: ' + now.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }),
+    'Prepared by: Bamzy Admin',
+    '',
+    '───────────────────────────────────────────────────',
     '',
   ]
   const csvContent = BOM + [
     ...brandHeader,
     headers.join(','),
     ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+    '',
+    '───────────────────────────────────────────────────',
+    'End of Report',
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })

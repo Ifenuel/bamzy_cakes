@@ -253,7 +253,7 @@ export async function sendPasswordResetEmail(toEmail, resetLink, userName) {
             <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:600;">
               Reset Password
             </a>
-            <p style="color:#A39BA9;font-size:13px;margin:24px 0 0;">This link expires in 1 hour. If you didn't request this, please ignore this email.</p>
+            <p style="color:#A39BA9;font-size:13px;margin:24px 0 0;">This link expires in 5 minutes. If you didn't request this, please ignore this email.</p>
           </td>
         </tr>
       </table>
