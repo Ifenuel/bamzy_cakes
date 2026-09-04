@@ -1,6 +1,6 @@
 import * as authService from '../services/authService.js'
 import * as otpService from '../services/otpService.js'
-import { sendWelcomeEmail } from '../services/emailService.js'
+import { sendWelcomeEmail, sendLoginNotification } from '../services/emailService.js'
 import pool from '../config/db.js'
 import { success, created, error, notFound } from '../utils/response.js'
 import { sanitizeObject } from '../utils/sanitize.js'
@@ -96,6 +96,9 @@ export async function login(req, res) {
     if (result.error === 'wrong_password') {
       return error(res, 'Incorrect password. Please try again or reset your password.', 401)
     }
+    // Send login notification email (non-blocking)
+    const ip = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'Unknown'
+    sendLoginNotification(result.user.email, result.user.full_name, ip).catch(() => {})
     return success(res, result)
   } catch (err) {
     console.error('Login error:', err.message)
