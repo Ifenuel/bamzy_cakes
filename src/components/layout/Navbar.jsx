@@ -24,7 +24,6 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const { getItemCount } = useCart()
   const { user, isAuthenticated, logout } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
   const itemCount = getItemCount()
   const sidebarRef = useRef(null)
