@@ -98,11 +98,16 @@ export async function forgotPassword(email) {
   const clientUrl = process.env.CLIENT_URL || 'https://bamzy-cakes.vercel.app'
   const resetLink = `${clientUrl}/reset-password?token=${rawToken}`
   const userName = user.full_name || ''
-  sendPasswordResetEmail(email, resetLink, userName).catch(err => {
-    console.error('[PASSWORD RESET] Email send failed:', err.message)
-  })
-
-  return { sent: true }
+  
+  let emailSent = false
+  try {
+    emailSent = await sendPasswordResetEmail(email, resetLink, userName)
+  } catch (err) {
+    console.error('[PASSWORD RESET] Email send error:', err.message)
+  }
+  
+  console.log(`[PASSWORD RESET] Email: ${email}, Link: ${resetLink}, Sent: ${emailSent}`)
+  return { sent: true, emailSent, resetToken: rawToken }
 }
 
 export async function verifyEmail(token) {

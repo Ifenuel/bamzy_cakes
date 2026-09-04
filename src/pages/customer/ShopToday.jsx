@@ -9,9 +9,9 @@ import SortSelect from '../../components/shop/SortSelect.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import Button from '../../components/ui/Button.jsx'
-import { apiGetProducts } from '../../utils/api.js'
+import { apiGetProducts, apiGetCategories } from '../../utils/api.js'
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   { slug: 'all', label: 'All' },
   { slug: 'cakes', label: 'Cakes' },
   { slug: 'pastries', label: 'Pastries' },
@@ -33,15 +33,19 @@ export default function ShopToday() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('recommended')
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
 
   const activeCategory = searchParams.get('category') || 'all'
 
   useEffect(() => {
     let isMounted = true
-    apiGetProducts()
-      .then((data) => {
+    Promise.all([apiGetProducts(), apiGetCategories()])
+      .then(([products, cats]) => {
         if (isMounted) {
-          setProducts(data)
+          setProducts(products)
+          if (Array.isArray(cats) && cats.length > 0) {
+            setCategories([{ slug: 'all', label: 'All' }, ...cats.map(c => ({ slug: c.slug, label: c.label }))])
+          }
           setIsLoading(false)
         }
       })
@@ -128,7 +132,7 @@ export default function ShopToday() {
           </div>
           <div className="mt-4">
             <CategoryFilter
-              categories={CATEGORIES}
+              categories={categories}
               activeSlug={activeCategory}
               onSelect={handleCategorySelect}
             />
