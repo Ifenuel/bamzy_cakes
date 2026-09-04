@@ -44,10 +44,9 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       "DELETE FROM newsletter_subscribers WHERE email LIKE '%@test.com' OR email LIKE '%@example.com'"
     )
     
-    // 5. Delete fake bookings
+    // 5. Delete fake bookings (uses email, not user_id)
     await pool.query(
-      'DELETE FROM bookings WHERE user_id != ALL($1)',
-      [keepIds]
+      "DELETE FROM bookings WHERE email NOT LIKE '%bamzycakes%' AND email != 'ada@example.com'"
     )
     
     // 6. Delete fake training registrations
