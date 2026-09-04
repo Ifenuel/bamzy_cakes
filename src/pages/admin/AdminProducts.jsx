@@ -159,15 +159,23 @@ export default function AdminProducts() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', value: stats.total, color: 'bg-lilac-soft text-lilac-deep' },
-          { label: 'Active', value: stats.active, color: 'bg-green-50 text-green-700' },
-          { label: 'Low Stock', value: stats.lowStock, color: 'bg-yellow-50 text-yellow-700' },
-          { label: 'Out of Stock', value: stats.outOfStock, color: 'bg-red-50 text-red-700' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className={'rounded-xl p-3 text-center ' + color}>
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="text-xs font-medium">{label}</p>
-          </div>
+          { label: 'Total Products', value: stats.total, icon: Package, gradient: 'from-lilac/20 to-pink/10', iconColor: 'text-lilac-deep' },
+          { label: 'Active', value: stats.active, icon: Package, gradient: 'from-green-50 to-emerald-50', iconColor: 'text-green-500' },
+          { label: 'Low Stock', value: stats.lowStock, icon: Package, gradient: 'from-amber-50 to-orange-50', iconColor: 'text-amber-500' },
+          { label: 'Out of Stock', value: stats.outOfStock, icon: Package, gradient: 'from-red-50 to-rose-50', iconColor: 'text-red-500' },
+        ].map(({ label, value, icon: Icon, gradient, iconColor }) => (
+          <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className={`rounded-xl bg-gradient-to-br ${gradient} border border-lilac-soft/50 p-4`}>
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 ${iconColor}`}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-ink">{value}</p>
+                <p className="text-[11px] font-medium text-ink-muted">{label}</p>
+              </div>
+            </div>
+          </motion.div>
         ))}
       </div>
 

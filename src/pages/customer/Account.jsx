@@ -444,6 +444,7 @@ function OrdersTab({ orders, fd }) {
   return (
     <div>
       <h2 className="font-heading text-xl font-bold text-ink mb-4">My Orders</h2>
+      <h2 className="font-heading text-xl font-bold text-ink mb-4">My Orders</h2>
       {orders.length === 0 ? (
         <EmptyState
           emoji="📦"
@@ -453,8 +454,10 @@ function OrdersTab({ orders, fd }) {
         />
       ) : (
         <div className="space-y-3">
-          {orders.map((o) => (
-            <OrderCard key={o.id} order={o} fd={fd} />
+          {orders.map((o, i) => (
+            <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <OrderCard order={o} fd={fd} />
+            </motion.div>
           ))}
         </div>
       )}
@@ -510,8 +513,8 @@ function BookingsTab({ bookings, fd }) {
         />
       ) : (
         <div className="space-y-3">
-          {bookings.map((b) => (
-            <div key={b.id} className="rounded-xl border border-lilac-soft bg-white p-5 shadow-xs">
+          {bookings.map((b, i) => (
+            <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-lilac-soft bg-white p-5 shadow-xs">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-ink capitalize">{(b.eventType || '').replace(/_/g, ' ')}</p>
@@ -529,7 +532,7 @@ function BookingsTab({ bookings, fd }) {
                   ))}
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -553,8 +556,8 @@ function TrainingsTab({ trainings, fd }) {
         />
       ) : (
         <div className="space-y-3">
-          {trainings.map((t) => (
-            <div key={t.id} className="rounded-xl border border-lilac-soft bg-white p-5 shadow-xs">
+          {trainings.map((t, i) => (
+            <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-lilac-soft bg-white p-5 shadow-xs">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-ink">{t.trainingTitle}</p>
@@ -565,7 +568,7 @@ function TrainingsTab({ trainings, fd }) {
                   <StatusBadge status={t.registrationStatus} />
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

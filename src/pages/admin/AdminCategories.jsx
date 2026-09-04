@@ -100,9 +100,25 @@ export default function AdminCategories() {
         </button>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {[
+          { label: 'Total Categories', value: categories.length, gradient: 'from-lilac/20 to-pink/10' },
+          { label: 'With Products', value: categories.filter(c => getProductCount(c.slug) > 0).length, gradient: 'from-green-50 to-emerald-50' },
+          { label: 'Total Products', value: products.length, gradient: 'from-pink-50 to-rose-50' },
+        ].map(({ label, value, gradient }) => (
+          <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className={`rounded-xl bg-gradient-to-br ${gradient} border border-lilac-soft/50 p-4 text-center`}>
+            <p className="text-2xl font-bold text-ink">{value}</p>
+            <p className="text-[11px] font-medium text-ink-muted">{label}</p>
+          </motion.div>
+        ))}
+      </div>
+
       <div className="space-y-2">
-        {categories.map((cat) => (
-          <div key={cat.id} className="flex items-center gap-4 rounded-xl border border-lilac-soft bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+        {categories.map((cat, i) => (
+          <motion.div key={cat.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+            className="flex items-center gap-4 rounded-xl border border-lilac-soft bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-gradient-soft text-pink">
               <Tags size={18} />
             </span>
@@ -118,7 +134,7 @@ export default function AdminCategories() {
                 <Trash2 size={16} />
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
         {categories.length === 0 && (
           <div className="py-16 text-center">
