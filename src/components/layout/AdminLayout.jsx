@@ -72,9 +72,9 @@ function SidebarContent({ user, logout }) {
     <>
       {/* Logo */}
       <Link to="/" className="mb-8 flex items-center gap-3 px-1">
-        <img src="/logo.jpg" alt="Bamzy" className="h-9 w-auto" />
+        <img src="/logo.jpg" alt="Bamzy" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/20" />
         <div>
-          <p className="text-sm font-semibold leading-tight text-white">Bamzy</p>
+          <p className="text-sm font-bold leading-tight text-white">Bamzy</p>
           <p className="text-[10px] text-white/50">Cakes & Confectionery</p>
         </div>
       </Link>

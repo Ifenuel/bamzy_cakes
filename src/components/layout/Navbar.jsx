@@ -75,14 +75,18 @@ export default function Navbar() {
         className="sticky top-0 z-40 border-b border-lilac-soft/40 backdrop-blur-md"
       >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center shrink-0" aria-label="Bamzy Cakes & Confectionery home">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Bamzy Cakes & Confectionery home">
             <motion.img
               src="/logo.jpg"
-              alt="Bamzy"
-              className="h-12 w-auto sm:h-14 lg:h-16"
+              alt="Bamzy Cakes & Confectionery"
+              className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 rounded-full object-cover ring-2 ring-lilac-soft/50"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             />
+            <div className="hidden sm:block">
+              <p className="font-heading text-sm sm:text-base lg:text-lg font-bold leading-tight text-ink">Bamzy</p>
+              <p className="text-[10px] sm:text-xs text-ink-muted leading-tight">Cakes & Confectionery</p>
+            </div>
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -168,7 +172,13 @@ export default function Navbar() {
             >
               {/* Sidebar header */}
               <div className="flex items-center justify-between border-b border-lilac-soft/60 px-5 py-4">
-                <img src="/logo.jpg" alt="Bamzy" className="h-10 w-auto" />
+                <div className="flex items-center gap-2">
+                  <img src="/logo.jpg" alt="Bamzy" className="h-10 w-10 rounded-full object-cover ring-2 ring-lilac-soft/50" />
+                  <div>
+                    <p className="font-heading text-sm font-bold leading-tight text-ink">Bamzy</p>
+                    <p className="text-[10px] text-ink-muted leading-tight">Cakes & Confectionery</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setIsMenuOpen(false)}
                   className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-lilac-soft/60 hover:text-pink"
