@@ -105,7 +105,6 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     // Keep these real emails — NEVER delete them
     const keepEmails = [
       'admin@bamzycakes.com',
-      'ada@example.com',
       'Bamzycakes621@gmail.com',
       'bamzycakes621@gmail.com',
     ]
