@@ -22,7 +22,7 @@ function HeroImage({ heroImage }) {
     <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-gradient-to-br from-lilac-soft/60 via-pink-soft/40 to-cream">
       <div className="text-center">
         <p className="font-heading text-4xl font-bold text-lilac/30 sm:text-5xl">🧁</p>
-        <p className="mt-2 text-sm font-medium text-lilac/50">Upload a hero image in admin settings</p>
+        <p className="mt-2 text-sm font-medium text-lilac/50">Handcrafted with love</p>
       </div>
     </div>
   )

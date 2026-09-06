@@ -94,7 +94,7 @@ const NAV_GROUPS = [
   },
 ]
 
-function SidebarContent({ user, logout }) {
+function SidebarContent({ user, logout, onClose }) {
   const [imgError, setImgError] = useState(false)
   const [notifications, setNotifications] = useState([])
   const hasAvatar = user?.avatar_url && !imgError
@@ -147,7 +147,7 @@ function SidebarContent({ user, logout }) {
           <p className="truncate text-[10px] text-white/40">{user?.email}</p>
         </div>
         {/* Notification Bell */}
-        <Link to="/admin/analytics" className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors">
+        <Link to="/admin/notifications" className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors">
           <Bell size={16} />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink text-[9px] font-bold text-white">
@@ -172,6 +172,7 @@ function SidebarContent({ user, logout }) {
                   key={to + label}
                   to={to}
                   end={end}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all ' +
                     (isActive
@@ -250,7 +251,7 @@ export default function AdminLayout() {
               <div className="flex justify-end mb-2">
                 <button onClick={() => setSidebarOpen(false)} className="text-white/50 hover:text-white">✕</button>
               </div>
-              <SidebarContent user={user} logout={logout} />
+              <SidebarContent user={user} logout={logout} onClose={() => setSidebarOpen(false)} />
             </aside>
           </div>
         )}
