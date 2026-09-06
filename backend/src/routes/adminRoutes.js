@@ -147,9 +147,10 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       [keepIds]
     )
     
-    // 5. Delete all bookings with test emails
+    // 5. Delete ALL bookings not from real customers
     await pool.query(
-      "DELETE FROM event_bookings WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
+      "DELETE FROM event_bookings WHERE customer_id IS NULL OR customer_id != ALL($1)",
+      [keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']]
     )
     
     // 6. Delete training registrations for fake users
@@ -158,9 +159,9 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       [keepIds]
     )
     
-    // 7. Delete newsletter subscribers with test emails
+    // 7. Delete ALL newsletter subscribers not from real customers
     await pool.query(
-      "DELETE FROM newsletter_subscribers WHERE email LIKE '%@test.com' OR email LIKE '%test%'"
+      "DELETE FROM newsletter_subscribers"
     )
     
     // 7b. Delete wishlists for fake users
@@ -169,9 +170,10 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       [keepIds]
     )
     
-    // 8. Delete only fake/test users (keep all real users)
+    // 8. Delete ALL users not in keepIds (remove all fake/test/example accounts)
     const deletedUsers = await pool.query(
-      "DELETE FROM users WHERE (email LIKE '%test%' OR email LIKE '%fake%' OR email = 'test@example.com') AND role != 'admin'"
+      'DELETE FROM users WHERE id != ALL($1) AND role != $2',
+      [keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000'], 'admin']
     )
     
     return success(res, {
