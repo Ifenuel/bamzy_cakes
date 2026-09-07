@@ -124,64 +124,62 @@ router.get('/report', requireAdmin, async (req, res) => {
 
 // Admin: Clean database — remove all test/fake data, keep real accounts
 router.post('/cleanup', requireAdmin, async (req, res) => {
-  try {
-    // Keep these real admin emails — NEVER delete them
-    const keepAdminEmails = [
-      'admin@bamzycakes.com',
-      'Bamzycakes621@gmail.com',
-      'bamzycakes621@gmail.com',
-    ]
+  const deleted = {}
 
-    // Get IDs of ALL users to keep (admin accounts + real customers)
-    const keepUsers = await pool.query(
-      `SELECT id FROM users WHERE email = ANY($1) 
-       OR (email NOT LIKE '%test%' AND email NOT LIKE '%fake%' AND email NOT LIKE '%example%' AND role != 'admin')`,
-      [keepAdminEmails]
-    )
-    const keepIds = keepUsers.rows.map(r => r.id)
-    const safeKeep = keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']
-    const deleted = {}
-    async function safeDelete(label, sql, params) {
-      try {
-        const r = await pool.query(sql, params)
-        deleted[label] = r.rowCount
-      } catch (err) {
-        console.error(`[Cleanup] ${label}:`, err.message)
-        deleted[label] = 'skipped: ' + err.message.slice(0, 50)
-      }
+  async function safeDelete(label, sql, params) {
+    try {
+      const r = await pool.query(sql, params || [])
+      deleted[label] = r.rowCount
+    } catch (err) {
+      console.error(`[Cleanup] ${label}:`, err.message)
+      deleted[label] = 'skipped'
     }
+  }
 
-    // Step 1: Delete payments for fake orders
-    await safeDelete('payments', 'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1))', [safeKeep])
-    // Step 2: Delete orphan payments (no order_id match)
-    await safeDelete('orphan_payments', "DELETE FROM payments WHERE order_id IS NULL OR order_id NOT IN (SELECT id FROM orders)", [])
-    // Step 3: Delete order items for fake orders
-    await safeDelete('order_items', 'DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1))', [safeKeep])
-    // Step 4: Delete fake orders
-    await safeDelete('orders', 'DELETE FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep])
-    // Step 5: Delete fake reviews
-    await safeDelete('reviews', 'DELETE FROM reviews WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep])
-    // Step 6: Delete notifications for non-kept users
-    await safeDelete('notifications', 'DELETE FROM notifications WHERE user_id IS NULL OR user_id != ALL($1)', [safeKeep])
-    // Step 7: Delete all bookings (no real bookings yet)
-    await safeDelete('bookings', 'DELETE FROM event_bookings', [])
-    // Step 8: Delete training registrations
-    await safeDelete('trainings', 'DELETE FROM training_registrations WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep])
-    // Step 9: Delete all newsletter subscribers
-    await safeDelete('newsletter', 'DELETE FROM newsletter_subscribers', [])
-    // Step 10: Delete wishlists for non-kept users
-    await safeDelete('wishlists', 'DELETE FROM wishlists WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep])
-    // Step 11: Delete all contact messages
-    await safeDelete('contacts', 'DELETE FROM contact_messages', [])
-    // Step 12: Delete all analytics events
-    await safeDelete('analytics', 'DELETE FROM analytics_events', [])
-    // Step 13: Delete fake users (keep admins + real customers)
-    await safeDelete('users', 'DELETE FROM users WHERE id != ALL($1) AND role != $2', [safeKeep, 'admin'])
+  try {
+    // Delete in correct dependency order (children before parents)
+
+    // 1. Payments (has order_id + training_registration_id, NO customer_id)
+    await safeDelete('payments_training', 'DELETE FROM payments WHERE training_registration_id IS NOT NULL')
+    await safeDelete('payments_orders', 'DELETE FROM payments WHERE order_id IS NOT NULL')
+    await safeDelete('payments_orphan', 'DELETE FROM payments')
+
+    // 2. Order items (depends on orders)
+    await safeDelete('order_items', 'DELETE FROM order_items')
+
+    // 3. Orders
+    await safeDelete('orders', 'DELETE FROM orders')
+
+    // 4. Training registrations (has customer_id)
+    await safeDelete('training_registrations', 'DELETE FROM training_registrations')
+
+    // 5. Reviews (has customer_id)
+    await safeDelete('reviews', 'DELETE FROM reviews')
+
+    // 6. Notifications
+    await safeDelete('notifications', 'DELETE FROM notifications')
+
+    // 7. Wishlists (has customer_id)
+    await safeDelete('wishlists', 'DELETE FROM wishlists')
+
+    // 8. Bookings
+    await safeDelete('event_bookings', 'DELETE FROM event_bookings')
+
+    // 9. Newsletter
+    await safeDelete('newsletter', 'DELETE FROM newsletter_subscribers')
+
+    // 10. Contact messages
+    await safeDelete('contacts', 'DELETE FROM contact_messages')
+
+    // 11. Analytics events
+    await safeDelete('analytics', 'DELETE FROM analytics_events')
+
+    // 12. Delete ALL non-admin users
+    await safeDelete('users', "DELETE FROM users WHERE email NOT LIKE '%bamzycakes%' AND role != 'admin'")
 
     return success(res, {
-      message: 'Database cleaned! Only real accounts remain.',
+      message: 'Database cleaned! All fake data removed.',
       deleted,
-      kept: keepAdminEmails,
     })
   } catch (err) {
     console.error('Cleanup error:', err.message)
