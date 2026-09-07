@@ -136,10 +136,43 @@
 .dark .hover\:bg-white:hover { background-color: var(--c-border) !important; }
 .dark .hover\:bg-gray-50:hover { background-color: var(--c-border-subtle) !important; }
 
-/* Dark mode specific brand elements */
+/* Dark mode brand elements */
 .dark .bg-brand-gradient-subtle { background: linear-gradient(135deg, rgba(26,16,37,0.8) 0%, rgba(30,20,45,0.8) 100%) !important; }
 .dark .bg-warm-gradient { background: linear-gradient(135deg, #0f0a1a 0%, #1a1025 50%, #160f24 100%) !important; }
 .dark .bg-cream-gradient { background: linear-gradient(180deg, #0f0a1a 0%, #1a1025 100%) !important; }
+.dark .bg-brand-gradient-soft { background: linear-gradient(135deg, rgba(26,16,37,0.6) 0%, rgba(30,20,45,0.6) 100%) !important; }
+.dark .bg-lilac-soft\/50 { background-color: rgba(26,16,37,0.5) !important; }
+.dark .bg-lilac-soft\/60 { background-color: rgba(26,16,37,0.6) !important; }
+.dark .bg-white\/90 { background-color: rgba(26,16,37,0.9) !important; }
+.dark .bg-white\/95 { background-color: rgba(26,16,37,0.95) !important; }
+.dark .bg-white\/5 { background-color: rgba(255,255,255,0.05) !important; }
+.dark .bg-white\/8 { background-color: rgba(255,255,255,0.08) !important; }
+.dark .bg-white\/3 { background-color: rgba(255,255,255,0.03) !important; }
+.dark .bg-pink-soft { background-color: rgba(240,75,138,0.15) !important; }
+.dark .bg-error-soft\/20 { background-color: rgba(239,68,68,0.1) !important; }
+.dark .bg-success-soft { background-color: rgba(34,197,94,0.15) !important; }
+.dark .bg-warning-soft { background-color: rgba(245,158,11,0.15) !important; }
+.dark .bg-info-soft { background-color: rgba(59,130,246,0.15) !important; }
+.dark .bg-error-soft { background-color: rgba(239,68,68,0.15) !important; }
+
+/* Dark mode modal/overlay backgrounds */
+.dark .fixed.inset-0.z-50 { background-color: rgba(0,0,0,0.7) !important; }
+.dark .bg-brand-gradient-soft { background: linear-gradient(135deg, rgba(26,16,37,0.5) 0%, rgba(30,20,45,0.5) 100%) !important; }
+
+/* Dark mode form elements */
+.dark input::placeholder,
+.dark textarea::placeholder { color: var(--c-text-muted) !important; }
+.dark .bg-gray-50 { background-color: var(--c-bg-alt) !important; }
+
+/* Dark mode stat cards and other cards */
+.dark .rounded-xl2 { border-color: var(--c-border) !important; }
+.dark .rounded-xl { border-color: var(--c-border) !important; }
+.dark .rounded-2xl { border-color: var(--c-border) !important; }
+.dark .rounded-xl3 { border-color: var(--c-border) !important; }
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar { background: var(--c-bg-alt); }
+.dark ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
 
 /* Dark mode footer */
 .dark footer { background-color: var(--c-bg-alt) !important; border-color: var(--c-border) !important; }
@@ -227,17 +260,39 @@
 
 /* ═══ Mobile-specific ═══ */
 @media (max-width: 640px) {
+  /* Prevent iOS zoom on input focus */
   input, textarea, select {
     font-size: 16px !important;
+    max-width: 100%;
   }
+  /* Touch-friendly tap targets */
   button, a {
     -webkit-tap-highlight-color: transparent;
   }
-  section {
+  /* Prevent horizontal overflow */
+  section, main, .max-w-7xl {
     overflow-x: hidden;
   }
-  .motion-div {
-    overflow-x: clip;
+  /* Ensure cards don't overflow */
+  .rounded-xl2, .rounded-xl, .rounded-2xl {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  /* Fix grid gaps on mobile */
+  .grid {
+    gap: 0.75rem;
+  }
+  /* Ensure images don't break layout */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ═══ Tablet improvements ═══ */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    gap: 1rem;
   }
 }
 
