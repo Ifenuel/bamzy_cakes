@@ -190,10 +190,20 @@ export default function Account() {
                       {firstName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-ink truncate">{user?.full_name}</p>
                     <p className="text-xs text-ink-muted truncate">{user?.email}</p>
                   </div>
+                  <button
+                    onClick={() => setTab('notifications')}
+                    className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-ink-muted transition-colors hover:bg-white hover:text-pink shadow-xs"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={18} />
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pink text-[9px] font-bold text-white">
+                      !
+                    </span>
+                  </button>
                 </div>
               </div>
 

@@ -89,6 +89,7 @@ const NAV_GROUPS = [
     label: 'Operations',
     items: [
       { label: 'Delivery Zones', to: '/admin/delivery-zones', icon: MapPin },
+      { label: 'Notifications', to: '/admin/notifications', icon: Bell },
       { label: 'Settings', to: '/admin/settings', icon: Settings },
     ],
   },
@@ -262,7 +263,7 @@ function SidebarContent({ user, logout, onClose }) {
         </div>
       </Link>
 
-      {/* Admin Info + Notification Bell */}
+      {/* Admin Info */}
       <div className="mb-6 flex items-center gap-3 rounded-xl bg-white/5 p-3">
         {hasAvatar ? (
           <img src={getImgUrl(user.avatar_url)} alt={user.full_name}
@@ -277,7 +278,6 @@ function SidebarContent({ user, logout, onClose }) {
           <p className="truncate text-xs font-medium text-white">{user?.full_name}</p>
           <p className="truncate text-[10px] text-white/40">{user?.email}</p>
         </div>
-        <NotificationBell />
       </div>
 
       {/* Navigation */}
@@ -305,6 +305,7 @@ function SidebarContent({ user, logout, onClose }) {
                 >
                   <Icon size={16} />
                   {label}
+                  {label === 'Notifications' && <AdminNotifBadge />}
                 </NavLink>
               ))}
             </div>
@@ -324,6 +325,29 @@ function SidebarContent({ user, logout, onClose }) {
         </button>
       </div>
     </>
+  )
+}
+
+/* Admin notification badge helper */
+function AdminNotifBadge() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    const token = localStorage.getItem('bamzy_token')
+    if (!token) return
+    fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=5', {
+      headers: { Authorization: 'Bearer ' + token }
+    }).then(r => r.json()).then(d => {
+      if (d.success && d.data) {
+        const total = (d.data.orders?.length || 0) + (d.data.bookings?.length || 0) + (d.data.trainings?.length || 0)
+        setCount(total)
+      }
+    }).catch(() => {})
+  }, [])
+  if (count === 0) return null
+  return (
+    <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink px-1.5 text-[10px] font-bold text-white">
+      {count > 99 ? '99+' : count}
+    </span>
   )
 }
 
