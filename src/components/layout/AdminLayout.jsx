@@ -105,33 +105,47 @@ function NotificationBell() {
 
   const NOTIF_ICONS = { order: '📦', booking: '🎉', training: '📚', review: '⭐', payment: '💳', newsletter: '📧', security: '🛡️' }
 
-  useEffect(() => {
+  /* Fetch notifications from activity feed.
+     Uses a single "lastReadAt" timestamp in localStorage.
+     Anything older than that timestamp = read. Anything newer = unread.
+     This survives data cleanup, fake data removal, and ID changes. */
+  function fetchNotifications() {
     const token = localStorage.getItem('bamzy_token')
     if (!token) return
-    // Load previously read notification IDs from localStorage
-    const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
+    const lastReadAt = localStorage.getItem('bamzy_admin_notifs_read_at')
     fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=10', {
       headers: { Authorization: 'Bearer ' + token }
     }).then(r => r.json()).then(d => {
       if (d.success && d.data) {
         const items = []
         ;(d.data.orders || []).forEach(o => {
-          items.push({ id: 'order-' + o.id, type: 'order', title: `New order #${o.orderNumber}`, message: `${o.customerName || 'Customer'} — ₦${Number(o.total || 0).toLocaleString()}`, time: o.createdAt, read: readIds.includes('order-' + o.id), link: '/admin/orders' })
+          items.push({ id: 'order-' + o.id, type: 'order', title: `New order #${o.orderNumber}`, message: `${o.customerName || 'Customer'} — ₦${Number(o.total || 0).toLocaleString()}`, time: o.createdAt, link: '/admin/orders' })
         })
         ;(d.data.bookings || []).forEach(b => {
-          items.push({ id: 'booking-' + b.id, type: 'booking', title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`, message: `${b.fullName || 'Customer'} booked an event`, time: b.createdAt, read: readIds.includes('booking-' + b.id), link: '/admin/bookings' })
+          items.push({ id: 'booking-' + b.id, type: 'booking', title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`, message: `${b.fullName || 'Customer'} booked an event`, time: b.createdAt, link: '/admin/bookings' })
         })
         ;(d.data.trainings || []).forEach(t => {
-          items.push({ id: 'training-' + t.id, type: 'training', title: 'Training registration', message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`, time: t.createdAt, read: readIds.includes('training-' + t.id), link: '/admin/trainings' })
+          items.push({ id: 'training-' + t.id, type: 'training', title: 'Training registration', message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`, time: t.createdAt, link: '/admin/trainings' })
         })
         ;(d.data.reviews || []).forEach(r => {
-          items.push({ id: 'review-' + r.id, type: 'review', title: `New review from ${r.customerName || 'Customer'}`, message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 50)}${r.text?.length > 50 ? '...' : ''}"`, time: r.createdAt, read: readIds.includes('review-' + r.id), link: '/admin/reviews' })
+          items.push({ id: 'review-' + r.id, type: 'review', title: `New review from ${r.customerName || 'Customer'}`, message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 50)}${r.text?.length > 50 ? '...' : ''}"`, time: r.createdAt, link: '/admin/reviews' })
         })
         items.sort((a, b) => new Date(b.time) - new Date(a.time))
+        // Timestamp-based read: anything before lastReadAt = read
+        const cutoff = lastReadAt ? new Date(lastReadAt) : null
+        items.forEach(n => { n.read = cutoff ? new Date(n.time) <= cutoff : false })
         setNotifications(items)
       }
     }).catch(() => {})
-  }, [])
+  }
+
+  // Fetch on mount
+  useEffect(() => { fetchNotifications() }, [])
+
+  // Re-fetch fresh data every time dropdown opens
+  useEffect(() => {
+    if (open) fetchNotifications()
+  }, [open])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -142,24 +156,16 @@ function NotificationBell() {
   }, [open])
 
   function markAsRead(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-    // Persist to localStorage so it survives page refresh
-    const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
-    if (!readIds.includes(id)) {
-      readIds.push(id)
-      localStorage.setItem('bamzy_admin_read_notifs', JSON.stringify(readIds))
+    const clicked = notifications.find(n => n.id === id)
+    if (clicked) {
+      localStorage.setItem('bamzy_admin_notifs_read_at', clicked.time)
     }
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
   function markAllRead() {
-    setNotifications(prev => {
-      const allIds = prev.map(n => n.id)
-      // Persist all IDs to localStorage
-      const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
-      const newRead = [...new Set([...readIds, ...allIds])]
-      localStorage.setItem('bamzy_admin_read_notifs', JSON.stringify(newRead))
-      return prev.map(n => ({ ...n, read: true }))
-    })
+    localStorage.setItem('bamzy_admin_notifs_read_at', new Date().toISOString())
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
   function timeAgo(date) {
@@ -320,7 +326,6 @@ function SidebarContent({ user, logout, onClose }) {
                 >
                   <Icon size={16} />
                   {label}
-                  {label === 'Notifications' && <AdminNotifBadge />}
                 </NavLink>
               ))}
             </div>
@@ -340,29 +345,6 @@ function SidebarContent({ user, logout, onClose }) {
         </button>
       </div>
     </>
-  )
-}
-
-/* Admin notification badge helper */
-function AdminNotifBadge() {
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    const token = localStorage.getItem('bamzy_token')
-    if (!token) return
-    fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=5', {
-      headers: { Authorization: 'Bearer ' + token }
-    }).then(r => r.json()).then(d => {
-      if (d.success && d.data) {
-        const total = (d.data.orders?.length || 0) + (d.data.bookings?.length || 0) + (d.data.trainings?.length || 0)
-        setCount(total)
-      }
-    }).catch(() => {})
-  }, [])
-  if (count === 0) return null
-  return (
-    <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink px-1.5 text-[10px] font-bold text-white">
-      {count > 99 ? '99+' : count}
-    </span>
   )
 }
 
