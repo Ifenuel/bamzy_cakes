@@ -12,6 +12,16 @@ router.patch('/admin/:id/status', requireAdmin, [
   body('status').isIn(['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'])
     .withMessage('Invalid booking status'),
 ], validate, bookingController.updateBookingStatus)
+router.delete('/admin/:id', requireAdmin, async (req, res) => {
+  try {
+    const pool = (await import('../config/db.js')).default
+    await pool.query('DELETE FROM event_bookings WHERE id = $1', [req.params.id])
+    return res.json({ success: true, data: { message: 'Booking deleted' } })
+  } catch (err) {
+    console.error('Delete booking error:', err.message)
+    return res.status(500).json({ success: false, message: 'Failed to delete booking' })
+  }
+})
 
 // Public — anyone can submit a booking request with validation
 router.post('/', [

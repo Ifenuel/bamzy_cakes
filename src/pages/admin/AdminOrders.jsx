@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ClipboardList, Search, ChevronDown, Package, Truck, CheckCircle, Clock, RefreshCw } from 'lucide-react'
-import { apiGetAllOrders, apiUpdateOrderStatus, getImgUrl } from '../../utils/api.js'
+import { apiGetAllOrders, apiUpdateOrderStatus, apiDeleteOrder, getImgUrl } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
 
@@ -253,7 +253,7 @@ export default function AdminOrders() {
                         )}
 
                         {/* Status Update */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <p className="text-xs font-semibold text-ink">Update Status:</p>
                           <select value={o.orderStatus} onChange={(e) => handleStatus(o.id, e.target.value)}
                             className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs font-medium text-ink focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20">
@@ -261,6 +261,19 @@ export default function AdminOrders() {
                               <option key={s} value={s}>{STATUS_CONFIG[s]?.label || s}</option>
                             ))}
                           </select>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Delete order #${o.orderNumber}? This cannot be undone.`)) {
+                                apiDeleteOrder(o.id).then(() => {
+                                  setOrders(prev => prev.filter(x => x.id !== o.id))
+                                  showToast('Order deleted', 'info')
+                                }).catch(err => showToast(err.message || 'Failed', 'error'))
+                              }
+                            }}
+                            className="ml-auto flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            🗑 Delete
+                          </button>
                         </div>
                       </div>
                     </motion.div>

@@ -13,6 +13,18 @@ router.patch('/admin/:id/status', requireAdmin, [
   body('order_status').isIn(['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
     .withMessage('Invalid order status'),
 ], validate, orderController.updateOrderStatus)
+router.delete('/admin/:id', requireAdmin, async (req, res) => {
+  try {
+    const pool = (await import('../config/db.js')).default
+    await pool.query('DELETE FROM order_items WHERE order_id = $1', [req.params.id])
+    await pool.query('DELETE FROM payments WHERE order_id = $1', [req.params.id])
+    await pool.query('DELETE FROM orders WHERE id = $1', [req.params.id])
+    return res.json({ success: true, data: { message: 'Order deleted' } })
+  } catch (err) {
+    console.error('Delete order error:', err.message)
+    return res.status(500).json({ success: false, message: 'Failed to delete order' })
+  }
+})
 
 // Create order with validation
 router.post('/', optionalAuth, [

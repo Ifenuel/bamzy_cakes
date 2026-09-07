@@ -195,6 +195,10 @@ export async function apiUpdateOrderStatus(id, order_status) {
   return request(`/orders/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ order_status }) })
 }
 
+export async function apiDeleteOrder(id) {
+  return request(`/orders/admin/${id}`, { method: 'DELETE' })
+}
+
 // Bookings
 export async function apiCreateBooking(body) {
   return request('/bookings', { method: 'POST', body: JSON.stringify(body) })
@@ -211,6 +215,10 @@ export async function apiGetAllBookings(params = {}) {
 
 export async function apiUpdateBookingStatus(id, status) {
   return request(`/bookings/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+}
+
+export async function apiDeleteBooking(id) {
+  return request(`/bookings/admin/${id}`, { method: 'DELETE' })
 }
 
 // Trainings

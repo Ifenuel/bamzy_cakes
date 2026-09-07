@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CalendarCheck, Search, MapPin, Users as UsersIcon, Clock, CheckCircle, RefreshCw, ChevronDown, Phone, Mail } from 'lucide-react'
-import { apiGetAllBookings, apiUpdateBookingStatus } from '../../utils/api.js'
+import { apiGetAllBookings, apiUpdateBookingStatus, apiDeleteBooking } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 
 const STATUSES = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled']
@@ -209,7 +209,7 @@ export default function AdminBookings() {
                         )}
 
                         {/* Status Update */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <p className="text-xs font-semibold text-ink">Update Status:</p>
                           <select value={b.status} onChange={(e) => handleStatus(b.id, e.target.value)}
                             className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs font-medium text-ink focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20">
@@ -217,6 +217,19 @@ export default function AdminBookings() {
                               <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
                             ))}
                           </select>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Delete ${b.eventType} booking by ${b.fullName}? This cannot be undone.`)) {
+                                apiDeleteBooking(b.id).then(() => {
+                                  setBookings(prev => prev.filter(x => x.id !== b.id))
+                                  showToast('Booking deleted', 'info')
+                                }).catch(err => showToast(err.message || 'Failed', 'error'))
+                              }
+                            }}
+                            className="ml-auto flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            🗑 Delete
+                          </button>
                         </div>
                       </div>
                     </motion.div>
