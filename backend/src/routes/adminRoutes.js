@@ -174,8 +174,8 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     // 11. Analytics events
     await safeDelete('analytics', 'DELETE FROM analytics_events')
 
-    // 12. Delete ALL non-admin users
-    await safeDelete('users', "DELETE FROM users WHERE email NOT LIKE '%bamzycakes%' AND role != 'admin'")
+    // 12. Delete only test/fake users — keep all real customers
+    await safeDelete('users', "DELETE FROM users WHERE (email LIKE '%test%' OR email LIKE '%fake%' OR email LIKE '%example%') AND role != 'admin'")
 
     return success(res, {
       message: 'Database cleaned! All fake data removed.',
