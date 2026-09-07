@@ -108,22 +108,24 @@ function NotificationBell() {
   useEffect(() => {
     const token = localStorage.getItem('bamzy_token')
     if (!token) return
+    // Load previously read notification IDs from localStorage
+    const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
     fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=10', {
       headers: { Authorization: 'Bearer ' + token }
     }).then(r => r.json()).then(d => {
       if (d.success && d.data) {
         const items = []
         ;(d.data.orders || []).forEach(o => {
-          items.push({ id: 'order-' + o.id, type: 'order', title: `New order #${o.orderNumber}`, message: `${o.customerName || 'Customer'} — ₦${Number(o.total || 0).toLocaleString()}`, time: o.createdAt, read: false, link: '/admin/orders' })
+          items.push({ id: 'order-' + o.id, type: 'order', title: `New order #${o.orderNumber}`, message: `${o.customerName || 'Customer'} — ₦${Number(o.total || 0).toLocaleString()}`, time: o.createdAt, read: readIds.includes('order-' + o.id), link: '/admin/orders' })
         })
         ;(d.data.bookings || []).forEach(b => {
-          items.push({ id: 'booking-' + b.id, type: 'booking', title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`, message: `${b.fullName || 'Customer'} booked an event`, time: b.createdAt, read: false, link: '/admin/bookings' })
+          items.push({ id: 'booking-' + b.id, type: 'booking', title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`, message: `${b.fullName || 'Customer'} booked an event`, time: b.createdAt, read: readIds.includes('booking-' + b.id), link: '/admin/bookings' })
         })
         ;(d.data.trainings || []).forEach(t => {
-          items.push({ id: 'training-' + t.id, type: 'training', title: 'Training registration', message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`, time: t.createdAt, read: false, link: '/admin/trainings' })
+          items.push({ id: 'training-' + t.id, type: 'training', title: 'Training registration', message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`, time: t.createdAt, read: readIds.includes('training-' + t.id), link: '/admin/trainings' })
         })
         ;(d.data.reviews || []).forEach(r => {
-          items.push({ id: 'review-' + r.id, type: 'review', title: `New review from ${r.customerName || 'Customer'}`, message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 50)}${r.text?.length > 50 ? '...' : ''}"`, time: r.createdAt, read: !!r.isApproved, link: '/admin/reviews' })
+          items.push({ id: 'review-' + r.id, type: 'review', title: `New review from ${r.customerName || 'Customer'}`, message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 50)}${r.text?.length > 50 ? '...' : ''}"`, time: r.createdAt, read: readIds.includes('review-' + r.id), link: '/admin/reviews' })
         })
         items.sort((a, b) => new Date(b.time) - new Date(a.time))
         setNotifications(items)
@@ -141,10 +143,23 @@ function NotificationBell() {
 
   function markAsRead(id) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    // Persist to localStorage so it survives page refresh
+    const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
+    if (!readIds.includes(id)) {
+      readIds.push(id)
+      localStorage.setItem('bamzy_admin_read_notifs', JSON.stringify(readIds))
+    }
   }
 
   function markAllRead() {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifications(prev => {
+      const allIds = prev.map(n => n.id)
+      // Persist all IDs to localStorage
+      const readIds = JSON.parse(localStorage.getItem('bamzy_admin_read_notifs') || '[]')
+      const newRead = [...new Set([...readIds, ...allIds])]
+      localStorage.setItem('bamzy_admin_read_notifs', JSON.stringify(newRead))
+      return prev.map(n => ({ ...n, read: true }))
+    })
   }
 
   function timeAgo(date) {

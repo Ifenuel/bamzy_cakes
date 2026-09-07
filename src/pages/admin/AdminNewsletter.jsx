@@ -209,7 +209,7 @@ export default function AdminNewsletter() {
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${sub.isActive ? 'bg-green-100 text-green-700' : 'bg-ink/10 text-ink-muted'}`}>
                   {sub.isActive ? 'Active' : 'Unsubscribed'}
                 </span>
-                <p className="mt-0.5 text-[10px] text-ink-muted">{fd(sub.subscribedAt)}</p>
+                <p className="mt-0.5 text-[10px] text-ink-muted">{fd(sub.subscribed_at || sub.subscribedAt)}</p>
               </div>
             </div>
           ))}
