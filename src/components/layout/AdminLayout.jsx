@@ -19,15 +19,15 @@ import {
   Bell,
   Heart,
 } from 'lucide-react'
-import { useState, useEffect, Component } from 'react'
+import { useState, useEffect, useRef, Component } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { getImgUrl } from '../../utils/api.js'
 import LoadingSpinner from '../ui/LoadingSpinner.jsx'
 
 /* ── Error Boundary for admin pages ── */
 class AdminPageError extends Component {
-  constructor(props) { super(props); this.state = { hasError: false, errorKey: '' } }
-  static getDerivedStateFromError(error) { return { hasError: true } }
+  constructor(props) { super(props); this.state = { hasError: false } }
+  static getDerivedStateFromError() { return { hasError: true } }
   componentDidCatch(error, info) { console.error('Admin page error:', error, info?.componentStack) }
   render() {
     if (this.state.hasError) {
@@ -94,31 +94,143 @@ const NAV_GROUPS = [
   },
 ]
 
-function SidebarContent({ user, logout, onClose }) {
-  const [imgError, setImgError] = useState(false)
+/* ── Notification Bell with Dropdown ── */
+function NotificationBell() {
+  const [open, setOpen] = useState(false)
+  const [expandedId, setExpandedId] = useState(null)
   const [notifications, setNotifications] = useState([])
-  const hasAvatar = user?.avatar_url && !imgError
+  const dropdownRef = useRef(null)
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const NOTIF_ICONS = { order: '📦', booking: '🎉', training: '📚', review: '⭐', payment: '💳', newsletter: '📧', security: '🛡️' }
 
   useEffect(() => {
     const token = localStorage.getItem('bamzy_token')
     if (!token) return
-    fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=5', {
+    fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin/activity?limit=10', {
       headers: { Authorization: 'Bearer ' + token }
     }).then(r => r.json()).then(d => {
       if (d.success && d.data) {
         const items = []
-        ;(d.data.orders || []).slice(0, 3).forEach(o => {
-          items.push({ id: o.id, text: `New order #${o.orderNumber} from ${o.customerName}`, time: o.createdAt, type: 'order' })
+        ;(d.data.orders || []).forEach(o => {
+          items.push({ id: 'order-' + o.id, type: 'order', title: `New order #${o.orderNumber}`, message: `${o.customerName || 'Customer'} — ₦${Number(o.total || 0).toLocaleString()}`, time: o.createdAt, read: false, link: '/admin/orders' })
         })
-        ;(d.data.bookings || []).slice(0, 2).forEach(b => {
-          items.push({ id: b.id, text: `Booking: ${b.eventType} by ${b.fullName}`, time: b.createdAt, type: 'booking' })
+        ;(d.data.bookings || []).forEach(b => {
+          items.push({ id: 'booking-' + b.id, type: 'booking', title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`, message: `${b.fullName || 'Customer'} booked an event`, time: b.createdAt, read: false, link: '/admin/bookings' })
         })
+        ;(d.data.trainings || []).forEach(t => {
+          items.push({ id: 'training-' + t.id, type: 'training', title: 'Training registration', message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`, time: t.createdAt, read: false, link: '/admin/trainings' })
+        })
+        ;(d.data.reviews || []).forEach(r => {
+          items.push({ id: 'review-' + r.id, type: 'review', title: `New review from ${r.customerName || 'Customer'}`, message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 50)}${r.text?.length > 50 ? '...' : ''}"`, time: r.createdAt, read: !!r.isApproved, link: '/admin/reviews' })
+        })
+        items.sort((a, b) => new Date(b.time) - new Date(a.time))
         setNotifications(items)
       }
     }).catch(() => {})
   }, [])
 
-  const unreadCount = notifications.length
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  function markAsRead(id) {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+
+  function markAllRead() {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  function timeAgo(date) {
+    const mins = Math.floor((Date.now() - new Date(date)) / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell size={16} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink text-[9px] font-bold text-white">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-hidden rounded-xl border border-white/10 bg-[#1a1025] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <p className="text-sm font-semibold text-white">Notifications</p>
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className="text-[10px] text-pink hover:underline">Mark all read</button>
+            )}
+          </div>
+          <div className="overflow-y-auto max-h-72">
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-white/40 text-sm">No notifications yet</div>
+            ) : (
+              notifications.slice(0, 10).map((n) => (
+                <div
+                  key={n.id}
+                  onClick={() => {
+                    if (!n.read) markAsRead(n.id)
+                    setExpandedId(expandedId === n.id ? null : n.id)
+                  }}
+                  className={`border-b border-white/5 px-4 py-3 cursor-pointer transition-colors ${
+                    !n.read ? 'bg-white/5 hover:bg-white/10' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-base mt-0.5">{NOTIF_ICONS[n.type] || '📢'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold ${n.read ? 'text-white/50' : 'text-white'}`}>{n.title}</p>
+                        {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-pink shrink-0" />}
+                      </div>
+                      {expandedId === n.id ? (
+                        <div>
+                          <p className="mt-1 text-xs text-white/60">{n.message}</p>
+                          <p className="mt-1 text-[10px] text-white/30">{timeAgo(n.time)}</p>
+                          {n.link && (
+                            <button onClick={(e) => { e.stopPropagation(); setOpen(false); window.location.href = n.link }}
+                              className="mt-2 text-[10px] text-pink hover:underline">View details →</button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-0.5 text-[10px] text-white/40 line-clamp-1">{n.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <Link to="/admin/notifications" onClick={() => setOpen(false)}
+            className="block border-t border-white/10 px-4 py-2.5 text-center text-[11px] text-pink hover:bg-white/5 transition-colors">
+            View all notifications
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SidebarContent({ user, logout, onClose }) {
+  const [imgError, setImgError] = useState(false)
+  const hasAvatar = user?.avatar_url && !imgError
 
   return (
     <>
@@ -131,7 +243,7 @@ function SidebarContent({ user, logout, onClose }) {
         </div>
       </Link>
 
-      {/* Admin Info */}
+      {/* Admin Info + Notification Bell */}
       <div className="mb-6 flex items-center gap-3 rounded-xl bg-white/5 p-3">
         {hasAvatar ? (
           <img src={getImgUrl(user.avatar_url)} alt={user.full_name}
@@ -146,15 +258,7 @@ function SidebarContent({ user, logout, onClose }) {
           <p className="truncate text-xs font-medium text-white">{user?.full_name}</p>
           <p className="truncate text-[10px] text-white/40">{user?.email}</p>
         </div>
-        {/* Notification Bell */}
-        <Link to="/admin/notifications" className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors">
-          <Bell size={16} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink text-[9px] font-bold text-white">
-              {unreadCount}
-            </span>
-          )}
-        </Link>
+        <NotificationBell />
       </div>
 
       {/* Navigation */}

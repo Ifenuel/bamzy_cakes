@@ -732,6 +732,7 @@ function ProfileTab({ user, updateUser }) {
 function NotificationsTab() {
   const [notifications, setNotifications] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     apiGetNotifications().then((data) => { setNotifications(data); setIsLoading(false) }).catch(() => setIsLoading(false))
@@ -760,28 +761,62 @@ function NotificationsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-ink">Notifications</h2>
-          <p className="text-sm text-ink-muted">Order updates, booking confirmations, and more.</p>
+          <p className="text-sm text-ink-muted">
+            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : 'All caught up!'}
+          </p>
         </div>
         {unreadCount > 0 && (
-          <button onClick={handleMarkAllRead} className="text-xs font-medium text-pink hover:underline">Mark all read</button>
+          <button onClick={handleMarkAllRead} className="flex items-center gap-1.5 rounded-full border border-lilac-soft bg-white px-4 py-2 text-xs font-medium text-ink-muted hover:bg-lilac-soft/50 transition-colors">
+            ✓ Mark all read
+          </button>
         )}
       </div>
       {notifications.length === 0 ? (
         <EmptyState emoji="🔔" text="No notifications yet." subtext="You will be notified when your orders are updated." />
       ) : (
         <div className="space-y-2">
-          {notifications.map((n) => (
-            <div key={n.id} onClick={() => !n.isRead && handleMarkRead(n.id)}
-              className={`flex items-start gap-3 rounded-xl border p-4 transition-colors cursor-pointer ${n.isRead ? 'border-lilac-soft bg-white' : 'border-pink/30 bg-lilac-soft/40'}`}>
-              <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : '📢'}</span>
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
-                <p className="text-xs text-ink-muted mt-0.5">{n.message}</p>
-                <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-              {!n.isRead && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-pink mt-1.5" />}
-            </div>
-          ))}
+          {notifications.map((n) => {
+            const isExpanded = expandedId === n.id
+            return (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => {
+                  if (!n.isRead) handleMarkRead(n.id)
+                  setExpandedId(isExpanded ? null : n.id)
+                }}
+                className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                  isExpanded ? 'border-pink/30 bg-white shadow-sm' :
+                  n.isRead ? 'border-lilac-soft bg-white hover:shadow-xs' : 'border-pink/30 bg-lilac-soft/40 hover:shadow-xs'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : n.type === 'training' ? '📚' : '📢'}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
+                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-pink shrink-0" />}
+                    </div>
+                    <p className="text-xs text-ink-muted mt-0.5">{n.message}</p>
+                    {isExpanded && n.message && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-3 rounded-lg bg-lilac-soft/30 p-3"
+                      >
+                        <p className="text-xs text-ink leading-relaxed">{n.message}</p>
+                        <p className="mt-2 text-[10px] text-ink-muted">
+                          {new Date(n.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                      </motion.div>
+                    )}
+                    <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
       )}
     </div>

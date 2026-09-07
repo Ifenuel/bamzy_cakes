@@ -1,27 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Bell, Check, CheckCheck, Package, CreditCard, Star, Mail, CalendarCheck, Heart, Trash2 } from 'lucide-react'
+import { Bell, Check, CheckCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const NOTIF_ICONS = {
-  order: Package,
-  payment: CreditCard,
-  review: Star,
-  newsletter: Mail,
-  booking: CalendarCheck,
-  training: CalendarCheck,
-  wishlist: Heart,
-  security: Bell,
-}
-
-const NOTIF_COLORS = {
-  order: 'bg-blue-100 text-blue-600',
-  payment: 'bg-green-100 text-green-600',
-  review: 'bg-yellow-100 text-yellow-600',
-  newsletter: 'bg-purple-100 text-purple-600',
-  booking: 'bg-pink-100 text-pink-600',
-  training: 'bg-indigo-100 text-indigo-600',
-  wishlist: 'bg-rose-100 text-rose-600',
-  security: 'bg-red-100 text-red-600',
+  order: '📦',
+  payment: '💳',
+  review: '⭐',
+  newsletter: '📧',
+  booking: '🎉',
+  training: '📚',
+  wishlist: '❤️',
+  security: '🛡️',
 }
 
 function timeAgo(date) {
@@ -41,7 +30,8 @@ function timeAgo(date) {
 export default function AdminNotifications() {
   const [notifications, setNotifications] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filter, setFilter] = useState('all') // all, unread, read
+  const [filter, setFilter] = useState('all')
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     fetchNotifications()
@@ -49,52 +39,51 @@ export default function AdminNotifications() {
 
   async function fetchNotifications() {
     const token = localStorage.getItem('bamzy_token')
-    if (!token) return
+    if (!token) { setIsLoading(false); return }
 
     try {
-      // Fetch recent activity from multiple sources
       const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
       const headers = { Authorization: 'Bearer ' + token }
 
-      const [ordersRes, bookingsRes, trainingsRes, reviewsRes] = await Promise.allSettled([
-        fetch(`${baseUrl}/admin/activity?limit=10`, { headers }).then(r => r.json()),
+      const [activityRes] = await Promise.allSettled([
+        fetch(`${baseUrl}/admin/activity?limit=20`, { headers }).then(r => r.json()),
       ])
 
       const items = []
 
-      if (ordersRes.status === 'fulfilled' && ordersRes.value?.success) {
-        const data = ordersRes.value.data
+      if (activityRes.status === 'fulfilled' && activityRes.value?.success) {
+        const data = activityRes.value.data
         ;(data.orders || []).forEach(o => {
           items.push({
             id: `order-${o.id}`,
             type: 'order',
             title: `New order #${o.orderNumber}`,
-            message: `${o.customerName || 'Customer'} placed an order for ${Number(o.total || 0).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}`,
+            message: `${o.customerName || 'Customer'} placed an order for ₦${Number(o.total || 0).toLocaleString('en-NG')}`,
+            detail: `Order status: ${o.orderStatus || 'pending'}. Payment: ${o.paymentStatus || 'pending'}. Go to Orders to manage this order and update the status.`,
             time: o.createdAt,
             read: false,
-            link: '/admin/orders',
           })
         })
         ;(data.bookings || []).forEach(b => {
           items.push({
             id: `booking-${b.id}`,
             type: 'booking',
-            title: `New ${b.eventType?.replace('_', ' ') || 'event'} booking`,
+            title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`,
             message: `${b.fullName || 'Customer'} booked an event`,
+            detail: `Event date: ${new Date(b.eventDate).toLocaleDateString('en-NG')}. Status: ${b.status || 'pending'}. Go to Events & Bookings to confirm or update this booking.`,
             time: b.createdAt,
             read: false,
-            link: '/admin/bookings',
           })
         })
         ;(data.trainings || []).forEach(t => {
           items.push({
             id: `training-${t.id}`,
             type: 'training',
-            title: `Training registration`,
+            title: 'Training registration',
             message: `${t.fullName || 'Customer'} registered for ${t.trainingTitle || 'a training'}`,
+            detail: `Registration status: ${t.registrationStatus || 'pending'}. Amount: ₦${Number(t.amount || 0).toLocaleString()}. Go to Trainings to manage this registration.`,
             time: t.createdAt,
             read: false,
-            link: '/admin/trainings',
           })
         })
         ;(data.reviews || []).forEach(r => {
@@ -103,14 +92,13 @@ export default function AdminNotifications() {
             type: 'review',
             title: `New review from ${r.customerName || 'Customer'}`,
             message: `${'⭐'.repeat(r.rating || 0)} — "${(r.text || '').slice(0, 60)}${r.text?.length > 60 ? '...' : ''}"`,
+            detail: `Rating: ${r.rating || 0}/5 stars. Go to Reviews to approve or respond to this review.`,
             time: r.createdAt,
-            read: r.isApproved,
-            link: '/admin/reviews',
+            read: !!r.isApproved,
           })
         })
       }
 
-      // Sort by time, newest first
       items.sort((a, b) => new Date(b.time) - new Date(a.time))
       setNotifications(items)
     } catch (err) {
@@ -121,13 +109,28 @@ export default function AdminNotifications() {
   }
 
   function markAsRead(id) {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    )
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    // Persist to backend
+    const token = localStorage.getItem('bamzy_token')
+    if (token) {
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      fetch(`${baseUrl}/admin/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token }
+      }).catch(() => {})
+    }
   }
 
   function markAllRead() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    const token = localStorage.getItem('bamzy_token')
+    if (token) {
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      fetch(`${baseUrl}/admin/notifications/read-all`, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token }
+      }).catch(() => {})
+    }
   }
 
   const unreadCount = notifications.filter(n => !n.read).length
@@ -209,8 +212,18 @@ export default function AdminNotifications() {
             </motion.div>
           ) : (
             filtered.map((notif, i) => {
-              const Icon = NOTIF_ICONS[notif.type] || Bell
-              const colorClass = NOTIF_COLORS[notif.type] || 'bg-gray-100 text-gray-600'
+              const isExpanded = expandedId === notif.id
+              const colorClass = {
+                order: 'bg-blue-100 text-blue-600',
+                payment: 'bg-green-100 text-green-600',
+                review: 'bg-yellow-100 text-yellow-600',
+                newsletter: 'bg-purple-100 text-purple-600',
+                booking: 'bg-pink-100 text-pink-600',
+                training: 'bg-indigo-100 text-indigo-600',
+                wishlist: 'bg-rose-100 text-rose-600',
+                security: 'bg-red-100 text-red-600',
+              }[notif.type] || 'bg-gray-100 text-gray-600'
+
               return (
                 <motion.div
                   key={notif.id}
@@ -219,39 +232,55 @@ export default function AdminNotifications() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ delay: i * 0.02 }}
                   onClick={() => {
-                    markAsRead(notif.id)
-                    if (notif.link) window.location.href = notif.link
+                    if (!notif.read) markAsRead(notif.id)
+                    setExpandedId(isExpanded ? null : notif.id)
                   }}
-                  className={`flex items-start gap-4 rounded-xl border p-4 transition-all cursor-pointer hover:shadow-sm ${
-                    notif.read
-                      ? 'border-gray-100 bg-white'
-                      : 'border-lilac-soft bg-lilac-soft/20'
+                  className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                    isExpanded ? 'shadow-md border-pink/30 bg-white' :
+                    notif.read ? 'border-gray-100 bg-white hover:shadow-sm' : 'border-lilac-soft bg-lilac-soft/20 hover:shadow-sm'
                   }`}
                 >
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${colorClass}`}>
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm font-semibold ${notif.read ? 'text-ink-muted' : 'text-ink'}`}>
-                        {notif.title}
-                      </p>
-                      {!notif.read && (
-                        <span className="h-2 w-2 rounded-full bg-pink shrink-0" />
-                      )}
+                  <div className="flex items-start gap-4">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg ${colorClass}`}>
+                      {NOTIF_ICONS[notif.type] || '📢'}
                     </div>
-                    <p className="mt-0.5 text-xs text-ink-muted line-clamp-2">{notif.message}</p>
-                    <p className="mt-1 text-[10px] text-ink-muted/60">{timeAgo(notif.time)}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-semibold ${notif.read ? 'text-ink-muted' : 'text-ink'}`}>
+                          {notif.title}
+                        </p>
+                        {!notif.read && (
+                          <span className="h-2 w-2 rounded-full bg-pink shrink-0" />
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-ink-muted line-clamp-2">{notif.message}</p>
+                      
+                      {/* Expanded detail — does NOT navigate away */}
+                      {isExpanded && notif.detail && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="mt-3 rounded-lg bg-lilac-soft/30 p-3"
+                        >
+                          <p className="text-xs text-ink leading-relaxed">{notif.detail}</p>
+                          <p className="mt-2 text-[10px] text-ink-muted">
+                            {new Date(notif.time).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </p>
+                        </motion.div>
+                      )}
+                      
+                      <p className="mt-1 text-[10px] text-ink-muted/60">{timeAgo(notif.time)}</p>
+                    </div>
+                    {!notif.read && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); markAsRead(notif.id) }}
+                        className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-lilac-soft/30 transition-colors"
+                        title="Mark as read"
+                      >
+                        <Check size={14} />
+                      </button>
+                    )}
                   </div>
-                  {!notif.read && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); markAsRead(notif.id) }}
-                      className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-lilac-soft/30 transition-colors"
-                      title="Mark as read"
-                    >
-                      <Check size={14} />
-                    </button>
-                  )}
                 </motion.div>
               )
             })
