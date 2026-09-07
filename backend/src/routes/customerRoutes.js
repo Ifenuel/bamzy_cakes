@@ -21,7 +21,7 @@ router.get('/wishlist', requireAuth, async (req, res) => {
               p.name, p.price, p.image_url, p.status, p.stock, c.name as "categoryName"
        FROM wishlists w
        JOIN products p ON w.product_id = p.id
-       LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN product_categories c ON p.category_id = c.id
        WHERE w.customer_id = $1
        ORDER BY w.created_at DESC`,
       [req.user.id]

@@ -200,7 +200,7 @@ router.get('/wishlists', requireAdmin, async (req, res) => {
               u.email as "customerEmail", u.phone as "customerPhone"
        FROM wishlists w
        JOIN products p ON w.product_id = p.id
-       LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN product_categories c ON p.category_id = c.id
        JOIN users u ON w.customer_id = u.id
        ORDER BY w.created_at DESC`
     )
