@@ -155,7 +155,7 @@ export default function Account() {
       case 'orders': return <OrdersTab orders={orders} fd={fd} />
       case 'bookings': return <BookingsTab bookings={bookings} navigate={navigate} fd={fd} />
       case 'trainings': return <TrainingsTab trainings={trainings} navigate={navigate} fd={fd} />
-      case 'favourites': return <FavouritesTab />
+      case 'favourites': return <FavouritesTab key={tab} />
       case 'notifications': return <NotificationsTab />
       case 'profile': return <ProfileTab user={user} updateUser={updateUser} />
       case 'settings': return <SettingsTab user={user} onSave={async (data) => { const updated = await apiUpdateProfile(data); updateUser(updated); return updated }} />
