@@ -13,7 +13,7 @@ export async function register({ full_name, email, phone, password, role, avatar
   const result = await pool.query(
     `INSERT INTO users (full_name, email, phone, password_hash, role, avatar_url)
      VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, full_name, email, phone, role, avatar_url, created_at`,
+     RETURNING id, full_name, email, phone, role, avatar_url as "avatarUrl", created_at`,
     [full_name, email, phone || null, hash, userRole, avatar_url || null]
   )
   const user = result.rows[0]
@@ -34,7 +34,7 @@ export async function register({ full_name, email, phone, password, role, avatar
 
 export async function login({ email, password }) {
   const result = await pool.query(
-    'SELECT id, full_name, email, phone, role, password_hash, is_active, avatar_url FROM users WHERE email = $1',
+    'SELECT id, full_name, email, phone, role, password_hash, is_active, avatar_url as \"avatarUrl\" FROM users WHERE email = $1',
     [email]
   )
   if (result.rows.length === 0) {
@@ -59,7 +59,7 @@ export async function login({ email, password }) {
 
 export async function getMe(userId) {
   const result = await pool.query(
-    'SELECT id, full_name, email, phone, role, avatar_url, created_at FROM users WHERE id = $1',
+    'SELECT id, full_name, email, phone, role, avatar_url as \"avatarUrl\", created_at FROM users WHERE id = $1',
     [userId]
   )
   return result.rows[0] || null
@@ -73,7 +73,7 @@ export async function updateProfile(userId, { full_name, phone, avatar_url }) {
        avatar_url = COALESCE($4, avatar_url),
        updated_at = NOW()
      WHERE id = $1
-     RETURNING id, full_name, email, phone, role, avatar_url, created_at`,
+     RETURNING id, full_name, email, phone, role, avatar_url as "avatarUrl", created_at`,
     [userId, full_name, phone, avatar_url]
   )
   return result.rows[0] || null

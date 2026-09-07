@@ -633,7 +633,7 @@ function ProfileTab({ user, updateUser }) {
       setAvatarPreview(result.imageUrl)
       // Save Cloudinary URL to profile in database
       await apiUpdateProfile({ avatar_url: result.imageUrl })
-      updateUser({ avatar_url: result.imageUrl })
+      updateUser({ avatarUrl: result.imageUrl })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
@@ -857,7 +857,7 @@ function SettingsTab({ user, onSave }) {
       const result = await apiUploadAvatar(file)
       setAvatarPreview(result.imageUrl)
       await apiUpdateProfile({ avatar_url: result.imageUrl })
-      updateUser({ avatar_url: result.imageUrl })
+      updateUser({ avatarUrl: result.imageUrl })
       showToast('Profile photo updated!', 'success')
     } catch (err) {
       showToast(err.message || 'Upload failed', 'error')
