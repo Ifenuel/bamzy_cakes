@@ -125,6 +125,7 @@ export async function sendWelcomeEmail(toEmail, userName) {
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
+              <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
               <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
               <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
             </td>
