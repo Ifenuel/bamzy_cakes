@@ -139,7 +139,8 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
       [keepAdminEmails]
     )
     const keepIds = keepUsers.rows.map(r => r.id)
-    const safeKeep = keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']    const deleted = {}
+    const safeKeep = keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']
+    const deleted = {}
     async function safeDelete(label, sql, params) {
       try {
         const r = await pool.query(sql, params)

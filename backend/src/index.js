@@ -5,7 +5,6 @@ import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { createServer } from 'net'
 import { errorHandler } from './middleware/errorHandler.js'
 import { logInfo } from './utils/logger.js'
 
@@ -163,25 +162,7 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
 
 app.use(errorHandler)
 
-function isPortFree(port) {
-  return new Promise((resolve) => {
-    const server = createServer()
-    server.once('error', () => resolve(false))
-    server.once('listening', () => { server.close(); resolve(true) })
-    server.listen(port)
-  })
-}
-
 async function start() {
-  // Check if port is already in use by another process
-  const free = await isPortFree(PORT)
-  if (!free) {
-    console.error(`[startup] Port ${PORT} is already in use by another process.`)
-    console.error(`[startup] To fix this, close any terminal running the backend, then run: npm run dev`)
-    console.error(`[startup] Or run this first: node -e "require('child_process').execSync('npx kill-port ${PORT}')"`)
-    process.exit(1)
-  }
-
   // Prevent crashes from unhandled errors
   process.on('unhandledRejection', (reason, promise) => {
     console.error('[ERROR] Unhandled Rejection:', reason?.message || reason)
