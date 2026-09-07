@@ -125,87 +125,94 @@ router.get('/report', requireAdmin, async (req, res) => {
 // Admin: Clean database — remove all test/fake data, keep real accounts
 router.post('/cleanup', requireAdmin, async (req, res) => {
   try {
-    // Keep these real emails — NEVER delete them
-    const keepEmails = [
+    // Keep these real admin emails — NEVER delete them
+    const keepAdminEmails = [
       'admin@bamzycakes.com',
       'Bamzycakes621@gmail.com',
       'bamzycakes621@gmail.com',
     ]
-    
-    // 1. Get IDs of users to keep (all non-test users)
+
+    // Get IDs of ALL users to keep (admin accounts + real customers)
     const keepUsers = await pool.query(
       `SELECT id FROM users WHERE email = ANY($1) 
-       OR (email NOT LIKE '%test%' AND email NOT LIKE '%fake%' AND email NOT LIKE '%example.com' AND role != 'admin')`,
-      [keepEmails]
+       OR (email NOT LIKE '%test%' AND email NOT LIKE '%fake%' AND email NOT LIKE '%example%' AND role != 'admin')`,
+      [keepAdminEmails]
     )
     const keepIds = keepUsers.rows.map(r => r.id)
-    
-    // 2. Delete payments for fake orders
+    const safeKeep = keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']
+
+    const deleted = {}
+
+    // 1. Delete ALL payments not linked to kept users (or orphaned)
+    const dp1 = await pool.query(
+      'DELETE FROM payments WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
+    )
+    deleted.payments = dp1.rowCount
+
+    // Also delete payments for orders by non-kept users
+    const dp2 = await pool.query(
+      'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1))', [safeKeep]
+    )
+    deleted.payments += dp2.rowCount
+
+    // 2. Delete order_items for fake orders
     await pool.query(
-      'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE customer_id != ALL($1))',
-      [keepIds]
+      'DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1))', [safeKeep]
     )
-    
-    // 3. Delete order_items for fake orders
+
+    // 3. Delete ALL fake orders
+    const do1 = await pool.query(
+      'DELETE FROM orders WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
+    )
+    deleted.orders = do1.rowCount
+
+    // 4. Delete fake reviews
+    const dr = await pool.query(
+      'DELETE FROM reviews WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
+    )
+    deleted.reviews = dr.rowCount
+
+    // 5. Delete notifications for fake users
     await pool.query(
-      'DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id != ALL($1))',
-      [keepIds]
+      'DELETE FROM notifications WHERE user_id IS NULL OR user_id != ALL($1)', [safeKeep]
     )
-    
-    // 4. Delete fake orders
-    const deletedOrders = await pool.query(
-      'DELETE FROM orders WHERE customer_id != ALL($1)',
-      [keepIds]
+
+    // 6. Delete ALL bookings from fake/non-existent customers
+    const db = await pool.query(
+      'DELETE FROM event_bookings WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
     )
-    
-    // 5. Delete fake reviews
+    deleted.bookings = db.rowCount
+
+    // 7. Delete ALL training registrations from fake customers
+    const dt = await pool.query(
+      'DELETE FROM training_registrations WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
+    )
+    deleted.trainings = dt.rowCount
+
+    // 8. Delete ALL newsletter subscribers
+    await pool.query('DELETE FROM newsletter_subscribers')
+
+    // 9. Delete wishlists for fake users
     await pool.query(
-      'DELETE FROM reviews WHERE customer_id != ALL($1)',
-      [keepIds]
+      'DELETE FROM wishlists WHERE customer_id IS NULL OR customer_id != ALL($1)', [safeKeep]
     )
-    
-    // 6. Delete notifications for fake users
-    await pool.query(
-      'DELETE FROM notifications WHERE user_id != ALL($1)',
-      [keepIds]
+
+    // 10. Delete contact messages from fake users
+    await pool.query('DELETE FROM contact_messages WHERE email NOT LIKE "%bamzy%"')
+
+    // 11. Delete analytics events from fake sessions
+    await pool.query('DELETE FROM analytics_events')
+
+    // 12. Delete ALL non-admin users that are fake
+    const du = await pool.query(
+      'DELETE FROM users WHERE id != ALL($1) AND role != $2', [safeKeep, 'admin']
     )
-    
-    // 5. Delete ALL bookings not from real customers
-    await pool.query(
-      "DELETE FROM event_bookings WHERE customer_id IS NULL OR customer_id != ALL($1)",
-      [keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000']]
-    )
-    
-    // 6. Delete training registrations for fake users
-    await pool.query(
-      'DELETE FROM training_registrations WHERE customer_id != ALL($1)',
-      [keepIds]
-    )
-    
-    // 7. Delete ALL newsletter subscribers not from real customers
-    await pool.query(
-      "DELETE FROM newsletter_subscribers"
-    )
-    
-    // 7b. Delete wishlists for fake users
-    await pool.query(
-      'DELETE FROM wishlists WHERE customer_id != ALL($1)',
-      [keepIds]
-    )
-    
-    // 8. Delete ALL users not in keepIds (remove all fake/test/example accounts)
-    const deletedUsers = await pool.query(
-      'DELETE FROM users WHERE id != ALL($1) AND role != $2',
-      [keepIds.length > 0 ? keepIds : ['00000000-0000-0000-0000-000000000000'], 'admin']
-    )
-    
+    deleted.users = du.rowCount
+
     return success(res, {
-      message: 'Database cleaned successfully!',
-      deleted: {
-        orders: deletedOrders.rowCount,
-        users: deletedUsers.rowCount,
-      },
-      kept: keepEmails,
+      message: 'Database cleaned! Only real accounts remain.',
+      deleted,
+      kept: keepAdminEmails,
     })
   } catch (err) {
     console.error('Cleanup error:', err.message)
