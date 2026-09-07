@@ -4,6 +4,7 @@ import { Menu, X, Search, ShoppingBag, User, LogOut, ChevronRight, Sun, Moon } f
 import { useCart } from '../../context/CartContext.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
+import { getImgUrl } from '../../utils/api.js'
 import SearchOverlay from '../common/SearchOverlay.jsx'
 
 const NAV_LINKS = [
@@ -119,7 +120,7 @@ export default function Navbar() {
               aria-label={isAuthenticated ? 'My account' : 'Sign in'}
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-lilac-soft/60 hover:text-pink">
               {isAuthenticated && user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-lilac-soft" />
+                <img src={getImgUrl(user.avatarUrl)} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-lilac-soft" />
               ) : isAuthenticated ? (
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
                   {firstName.charAt(0).toUpperCase()}

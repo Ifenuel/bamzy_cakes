@@ -184,7 +184,7 @@ export default function Account() {
               <div className="mb-6 rounded-2xl bg-brand-gradient-subtle p-5">
                 <div className="flex items-center gap-3">
                   {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-white" />
+                    <img src={getImgUrl(user.avatarUrl)} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-white" />
                   ) : (
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gradient text-white font-heading text-lg font-bold">
                       {firstName.charAt(0).toUpperCase()}
@@ -608,7 +608,7 @@ function FavouritesTab() {
 function ProfileTab({ user, updateUser }) {
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || '')
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl ? getImgUrl(user.avatarUrl) : '')
   const [form, setForm] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
@@ -630,10 +630,10 @@ function ProfileTab({ user, updateUser }) {
     setUploading(true)
     try {
       const result = await apiUploadAvatar(file)
-      const imageUrl = getImgUrl(result.imageUrl)
-      setAvatarPreview(imageUrl)
-      // Save avatar to profile
+      setAvatarPreview(result.imageUrl)
+      // Save Cloudinary URL to profile in database
       await apiUpdateProfile({ avatar_url: result.imageUrl })
+      updateUser({ avatar_url: result.imageUrl })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
@@ -838,12 +838,33 @@ function NotificationsTab() {
 function SettingsTab({ user, onSave }) {
   const { showToast } = useToast()
   const { logout } = useAuth()
+  const { updateUser } = useAuth()
   const navigate = useNavigate()
   const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '', phone: user?.phone || '' })
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteReason, setDeleteReason] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl ? getImgUrl(user.avatarUrl) : '')
+  const [uploading, setUploading] = useState(false)
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 3 * 1024 * 1024) { showToast('Image must be under 3MB', 'error'); return }
+    setUploading(true)
+    try {
+      const result = await apiUploadAvatar(file)
+      setAvatarPreview(result.imageUrl)
+      await apiUpdateProfile({ avatar_url: result.imageUrl })
+      updateUser({ avatar_url: result.imageUrl })
+      showToast('Profile photo updated!', 'success')
+    } catch (err) {
+      showToast(err.message || 'Upload failed', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function handleSaveProfile() {
     setIsSavingProfile(true)
@@ -881,6 +902,31 @@ function SettingsTab({ user, onSave }) {
         <div className="flex items-center gap-2 mb-4">
           <UserCircle size={18} className="text-lilac" />
           <h3 className="font-heading text-base font-semibold text-ink">Edit Profile</h3>
+        </div>
+        {/* Avatar Upload */}
+        <div className="mb-4 flex items-center gap-4">
+          <div className="relative group">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-lilac-soft" />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-gradient text-2xl font-heading font-bold text-white">
+                {(user?.full_name || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <label className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <Camera size={18} className="text-white" />
+              <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            </label>
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-ink">Profile Photo</p>
+            <p className="text-xs text-ink-muted">Click to change. Max 3MB.</p>
+          </div>
         </div>
         <div className="space-y-3 max-w-md">
           <div>

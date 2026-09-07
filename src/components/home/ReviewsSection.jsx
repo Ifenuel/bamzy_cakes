@@ -5,6 +5,28 @@ import { apiGetReviews, apiSubmitReview, getImgUrl } from '../../utils/api.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import ScrollReveal, { StaggerContainer, StaggerItem } from '../ui/ScrollReveal.jsx'
 
+/* ── Avatar component that falls back gracefully ── */
+function ReviewAvatar({ name, avatarUrl }) {
+  const [imgError, setImgError] = useState(false)
+  const initials = name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
+  
+  if (avatarUrl && !imgError) {
+    return (
+      <img 
+        src={getImgUrl(avatarUrl)} 
+        alt={name}
+        className="h-10 w-10 rounded-full object-cover ring-2 ring-lilac-soft"
+        onError={() => setImgError(true)}
+      />
+    )
+  }
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white shrink-0">
+      {initials}
+    </div>
+  )
+}
+
 function ReviewForm({ onSuccess }) {
   const { isAuthenticated, user } = useAuth()
   const [rating, setRating] = useState(0)
@@ -44,7 +66,7 @@ function ReviewForm({ onSuccess }) {
           <CheckCircle size={32} className="mx-auto text-green-500" />
         </motion.div>
         <p className="mt-3 font-heading text-lg font-bold text-ink">Thank you, {user?.full_name?.split(' ')[0]}!</p>
-        <p className="mt-1 text-sm text-ink-muted">Your feedback helps us serve you better.</p>
+        <p className="mt-1 text-sm text-ink-muted">Your review will appear after admin approval.</p>
       </motion.div>
     )
   }
@@ -74,7 +96,6 @@ function ReviewForm({ onSuccess }) {
           Share your experience as {user?.full_name?.split(' ')[0]}.
         </p>
 
-        {/* Star Rating */}
         <div className="mt-5">
           <label className="mb-2 block text-sm font-medium text-ink">Your Rating</label>
           <div className="flex gap-1">
@@ -91,18 +112,13 @@ function ReviewForm({ onSuccess }) {
               >
                 <Star
                   size={30}
-                  className={
-                    star <= (hoverRating || rating)
-                      ? 'text-pink fill-pink'
-                      : 'text-lilac-soft'
-                  }
+                  className={star <= (hoverRating || rating) ? 'text-pink fill-pink' : 'text-lilac-soft'}
                 />
               </motion.button>
             ))}
           </div>
         </div>
 
-        {/* Review Text */}
         <div className="mt-4">
           <label htmlFor="review-text" className="mb-1.5 block text-sm font-medium text-ink">Your Review</label>
           <textarea
@@ -115,9 +131,7 @@ function ReviewForm({ onSuccess }) {
           />
         </div>
 
-        {error && (
-          <p className="mt-2 text-sm text-error">{error}</p>
-        )}
+        {error && <p className="mt-2 text-sm text-error">{error}</p>}
 
         <motion.button
           type="submit"
@@ -146,7 +160,7 @@ export default function ReviewsSection() {
   }
 
   return (
-    <section className="py-16 sm:py-24">
+    <section className="py-16 sm:py-24" style={{ backgroundColor: 'var(--c-bg-alt)' }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal preset="fadeUp" className="text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-pink">
@@ -159,41 +173,45 @@ export default function ReviewsSection() {
         </ScrollReveal>
 
         {reviews.length === 0 ? (
-          <ScrollReveal preset="scaleUp" className="mx-auto mt-12 max-w-lg rounded-2xl border border-lilac-soft bg-brand-gradient-subtle py-16 text-center">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-pink shadow-soft">
+          <ScrollReveal preset="scaleUp" className="mx-auto mt-12 max-w-lg rounded-2xl border border-lilac-soft bg-white py-16 text-center shadow-soft">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pink-soft text-pink">
               <MessageCircle size={26} />
             </span>
             <p className="mt-4 font-heading text-lg font-semibold text-ink">No reviews yet</p>
             <p className="mt-1 text-sm text-ink-muted">Be the first to share your Bamzy experience!</p>
           </ScrollReveal>
         ) : (
-          <StaggerContainer className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
-            {reviews.map((review) => (
-              <StaggerItem key={review.id}>
-                <div className="flex h-full flex-col gap-3 rounded-2xl border border-lilac-soft bg-white p-6 shadow-soft transition-shadow hover:shadow-card">
+          <div className="mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {reviews.slice(0, 9).map((review, i) => (
+              <ScrollReveal key={review.id} preset="fadeUp" delay={i * 0.06}>
+                <div className="flex h-full flex-col rounded-2xl border border-lilac-soft bg-white p-6 shadow-soft transition-all hover:shadow-card hover:-translate-y-1">
+                  {/* Stars */}
                   <div className="flex gap-0.5 text-pink">
                     {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
+                      <Star key={i} size={16} fill="currentColor" strokeWidth={0} />
+                    ))}
+                    {Array.from({ length: 5 - review.rating }).map((_, i) => (
+                      <Star key={`empty-${i}`} size={16} className="text-lilac-soft/40" />
                     ))}
                   </div>
-                  <p className="flex-1 text-sm leading-relaxed text-ink-muted">
+
+                  {/* Review text */}
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-ink">
                     &ldquo;{review.text}&rdquo;
                   </p>
-                  <div className="flex items-center gap-2 border-t border-lilac-soft/60 pt-3">
-                    {review.avatarUrl ? (
-                      <img src={getImgUrl(review.avatarUrl)} alt={review.customer_name}
-                        className="h-8 w-8 rounded-full object-cover ring-2 ring-lilac-soft" />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
-                        {review.customer_name?.charAt(0)?.toUpperCase()}
-                      </div>
-                    )}
-                    <p className="text-sm font-semibold text-ink">{review.customer_name}</p>
+
+                  {/* Customer info */}
+                  <div className="mt-4 flex items-center gap-3 border-t border-lilac-soft/60 pt-4">
+                    <ReviewAvatar name={review.customer_name} avatarUrl={review.avatarUrl} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink truncate">{review.customer_name}</p>
+                      <p className="text-[10px] text-ink-muted">Verified Customer</p>
+                    </div>
                   </div>
                 </div>
-              </StaggerItem>
+              </ScrollReveal>
             ))}
-          </StaggerContainer>
+          </div>
         )}
 
         {/* Review Form */}
