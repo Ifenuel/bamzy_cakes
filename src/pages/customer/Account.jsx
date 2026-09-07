@@ -9,7 +9,8 @@ import {
 import PageContainer from '../../components/layout/PageContainer.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, apiDeleteAccount, apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, getImgUrl } from '../../utils/api.js'
+import { useCart } from '../../context/CartContext.jsx'
+import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, apiDeleteAccount, apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, apiGetWishlist, apiRemoveFromWishlist, getImgUrl } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 
@@ -586,18 +587,83 @@ function TrainingsTab({ trainings, fd }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   FAVOURITES TAB (placeholder — no backend yet)
+   FAVOURITES TAB (real wishlist from backend)
    ═══════════════════════════════════════════════════════ */
 function FavouritesTab() {
+  const [items, setItems] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    apiGetWishlist()
+      .then((data) => { setItems(data); setIsLoading(false) })
+      .catch(() => setIsLoading(false))
+  }, [])
+
+  async function handleRemove(productId) {
+    try {
+      await apiRemoveFromWishlist(productId)
+      setItems(prev => prev.filter(item => item.product_id !== productId))
+      showToast('Removed from your wishlist', 'success')
+    } catch (err) {
+      showToast(err.message || 'Failed to remove', 'error')
+    }
+  }
+
+  if (isLoading) return <LoadingSpinner label="Loading your favourites..." />
+
+  if (items.length === 0) {
+    return (
+      <div>
+        <h2 className="font-heading text-xl font-bold text-ink mb-4">My Favourites</h2>
+        <EmptyState
+          emoji="💗"
+          text="No favourites yet."
+          subtext="Tap the heart icon on any product to save it here."
+          cta={{ label: 'Browse Products', to: '/shop' }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div>
-      <h2 className="font-heading text-xl font-bold text-ink mb-4">My Favourites</h2>
-      <EmptyState
-        emoji="💗"
-        text="View your saved treats."
-        subtext="Your wishlist is just a click away."
-        cta={{ label: 'View Wishlist', to: '/wishlist' }}
-      />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-ink">My Favourites</h2>
+          <p className="text-sm text-ink-muted">{items.length} saved treat{items.length !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item) => (
+          <motion.div
+            key={item.product_id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-lilac-soft bg-white p-4 shadow-soft"
+          >
+            <div className="flex items-start gap-3">
+              {item.image_url && !item.image_url.startsWith('/uploads/') ? (
+                <img src={getImgUrl(item.image_url)} alt={item.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-soft to-lilac-soft text-xl">🧁</div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-ink truncate">{item.name}</p>
+                <p className="text-sm font-bold text-pink mt-1">{formatNaira(item.price)}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Link to={`/shop/${item.product_id}`} className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-brand-gradient px-3 py-2 text-xs font-semibold text-white hover:shadow-glow transition-all">
+                View Product
+              </Link>
+              <button onClick={() => handleRemove(item.product_id)} className="rounded-lg border border-lilac-soft px-3 py-2 text-xs font-medium text-ink-muted hover:bg-error-soft hover:text-error transition-colors">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   )
 }
