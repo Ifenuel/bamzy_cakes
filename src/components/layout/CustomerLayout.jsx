@@ -4,7 +4,7 @@ import Footer from './Footer.jsx'
 
 export default function CustomerLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col" style={{ backgroundColor: 'var(--c-bg)' }}>
       <Navbar />
       <main className="flex-1">
         <Outlet />

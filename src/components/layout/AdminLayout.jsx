@@ -171,56 +171,75 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-hidden rounded-xl border border-white/10 bg-[#1a1025] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-semibold text-white">Notifications</p>
+        <div className="absolute right-0 top-10 z-50 w-[340px] sm:w-96 max-h-[480px] overflow-hidden rounded-2xl border border-white/10 bg-[#1e1432] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Bell size={18} className="text-white/80" />
+              <p className="text-base font-bold text-white">Notifications</p>
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-pink/20 px-2 py-0.5 text-xs font-semibold text-pink">{unreadCount} new</span>
+              )}
+            </div>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-[10px] text-pink hover:underline">Mark all read</button>
+              <button onClick={markAllRead} className="text-sm text-pink hover:text-pink/80 font-medium transition-colors">Mark all read</button>
             )}
           </div>
-          <div className="overflow-y-auto max-h-72">
+          <div className="overflow-y-auto max-h-[400px]">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-white/40 text-sm">No notifications yet</div>
+              <div className="p-10 text-center">
+                <Bell size={36} className="mx-auto text-white/20" />
+                <p className="mt-3 text-sm text-white/50">No notifications yet</p>
+                <p className="mt-1 text-xs text-white/30">New orders and bookings will appear here</p>
+              </div>
             ) : (
-              notifications.slice(0, 10).map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => {
-                    if (!n.read) markAsRead(n.id)
-                    setExpandedId(expandedId === n.id ? null : n.id)
-                  }}
-                  className={`border-b border-white/5 px-4 py-3 cursor-pointer transition-colors ${
-                    !n.read ? 'bg-white/5 hover:bg-white/10' : 'hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-base mt-0.5">{NOTIF_ICONS[n.type] || '📢'}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`text-xs font-semibold ${n.read ? 'text-white/50' : 'text-white'}`}>{n.title}</p>
-                        {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-pink shrink-0" />}
-                      </div>
-                      {expandedId === n.id ? (
-                        <div>
-                          <p className="mt-1 text-xs text-white/60">{n.message}</p>
-                          <p className="mt-1 text-[10px] text-white/30">{timeAgo(n.time)}</p>
-                          {n.link && (
-                            <button onClick={(e) => { e.stopPropagation(); setOpen(false); window.location.href = n.link }}
-                              className="mt-2 text-[10px] text-pink hover:underline">View details →</button>
-                          )}
+              notifications.slice(0, 10).map((n) => {
+                const isExpanded = expandedId === n.id
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      if (!n.read) markAsRead(n.id)
+                      setExpandedId(isExpanded ? null : n.id)
+                    }}
+                    className={`border-b border-white/5 px-5 py-4 cursor-pointer transition-all ${
+                      !n.read ? 'bg-white/5 hover:bg-white/8' : 'hover:bg-white/3'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl mt-0.5 shrink-0">{NOTIF_ICONS[n.type] || '📢'}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-semibold leading-tight ${n.read ? 'text-white/60' : 'text-white'}`}>{n.title}</p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {!n.read && <span className="h-2 w-2 rounded-full bg-pink" />}
+                            <span className="text-xs text-white/40 whitespace-nowrap">{timeAgo(n.time)}</span>
+                          </div>
                         </div>
-                      ) : (
-                        <p className="mt-0.5 text-[10px] text-white/40 line-clamp-1">{n.message}</p>
-                      )}
+                        <p className="mt-1 text-sm text-white/70 leading-relaxed line-clamp-2">{n.message}</p>
+                        {isExpanded && (
+                          <div className="mt-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                            <p className="text-sm text-white/80 leading-relaxed">{n.message}</p>
+                            <p className="mt-2 text-xs text-white/40">
+                              {new Date(n.time).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </p>
+                            {n.link && (
+                              <button onClick={(e) => { e.stopPropagation(); setOpen(false); window.location.href = n.link }}
+                                className="mt-3 inline-flex items-center gap-1 rounded-full bg-pink/20 px-3 py-1.5 text-xs font-semibold text-pink hover:bg-pink/30 transition-colors">
+                                View details →
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
           <Link to="/admin/notifications" onClick={() => setOpen(false)}
-            className="block border-t border-white/10 px-4 py-2.5 text-center text-[11px] text-pink hover:bg-white/5 transition-colors">
-            View all notifications
+            className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-3.5 text-sm font-semibold text-pink hover:bg-white/5 transition-colors">
+            View all notifications →
           </Link>
         </div>
       )}

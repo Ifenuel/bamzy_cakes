@@ -774,7 +774,7 @@ function NotificationsTab() {
       {notifications.length === 0 ? (
         <EmptyState emoji="🔔" text="No notifications yet." subtext="You will be notified when your orders are updated." />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {notifications.map((n) => {
             const isExpanded = expandedId === n.id
             return (
@@ -786,32 +786,34 @@ function NotificationsTab() {
                   if (!n.isRead) handleMarkRead(n.id)
                   setExpandedId(isExpanded ? null : n.id)
                 }}
-                className={`rounded-xl border p-4 transition-all cursor-pointer ${
-                  isExpanded ? 'border-pink/30 bg-white shadow-sm' :
-                  n.isRead ? 'border-lilac-soft bg-white hover:shadow-xs' : 'border-pink/30 bg-lilac-soft/40 hover:shadow-xs'
+                className={`rounded-xl border p-5 transition-all cursor-pointer ${
+                  isExpanded ? 'border-pink/30 bg-white shadow-md' :
+                  n.isRead ? 'border-lilac-soft bg-white hover:shadow-sm' : 'border-pink/30 bg-pink-50/60 hover:shadow-sm'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-lg">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : n.type === 'training' ? '📚' : '📢'}</span>
+                <div className="flex items-start gap-4">
+                  <span className="text-2xl mt-0.5 shrink-0">{n.type === 'order' ? '📦' : n.type === 'booking' ? '🎉' : n.type === 'training' ? '📚' : '📢'}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm ${n.isRead ? 'font-medium text-ink-muted' : 'font-semibold text-ink'}`}>{n.title}</p>
-                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-pink shrink-0" />}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className={`text-base ${n.isRead ? 'font-medium text-ink-muted' : 'font-bold text-ink'}`}>{n.title}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!n.isRead && <span className="h-2.5 w-2.5 rounded-full bg-pink" />}
+                        <span className="text-sm text-ink-light whitespace-nowrap">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-ink-muted mt-0.5">{n.message}</p>
+                    <p className="text-sm text-ink-muted mt-1 leading-relaxed">{n.message}</p>
                     {isExpanded && n.message && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="mt-3 rounded-lg bg-lilac-soft/30 p-3"
+                        className="mt-4 rounded-xl bg-lilac-50 p-4 border border-lilac-soft/50"
                       >
-                        <p className="text-xs text-ink leading-relaxed">{n.message}</p>
-                        <p className="mt-2 text-[10px] text-ink-muted">
+                        <p className="text-sm text-ink leading-relaxed">{n.message}</p>
+                        <p className="mt-2 text-xs text-ink-muted">
                           {new Date(n.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
                         </p>
                       </motion.div>
                     )}
-                    <p className="text-[10px] text-ink-light mt-1">{new Date(n.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
               </motion.div>

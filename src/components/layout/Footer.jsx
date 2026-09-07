@@ -45,7 +45,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-lilac-soft/60 bg-white">
+    <footer className="border-t border-lilac-soft/60" style={{ backgroundColor: 'var(--c-bg-card)' }}>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
           {/* Brand column */}

@@ -235,49 +235,50 @@ export default function AdminNotifications() {
                     if (!notif.read) markAsRead(notif.id)
                     setExpandedId(isExpanded ? null : notif.id)
                   }}
-                  className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                  className={`rounded-xl border p-5 transition-all cursor-pointer ${
                     isExpanded ? 'shadow-md border-pink/30 bg-white' :
-                    notif.read ? 'border-gray-100 bg-white hover:shadow-sm' : 'border-lilac-soft bg-lilac-soft/20 hover:shadow-sm'
+                    notif.read ? 'border-gray-100 bg-white hover:shadow-sm' : 'border-lilac-soft bg-pink-50/50 hover:shadow-sm'
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg ${colorClass}`}>
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl ${colorClass}`}>
                       {NOTIF_ICONS[notif.type] || '📢'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`text-sm font-semibold ${notif.read ? 'text-ink-muted' : 'text-ink'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className={`text-base font-semibold ${notif.read ? 'text-ink-muted' : 'text-ink'}`}>
                           {notif.title}
                         </p>
-                        {!notif.read && (
-                          <span className="h-2 w-2 rounded-full bg-pink shrink-0" />
-                        )}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {!notif.read && (
+                            <span className="h-2.5 w-2.5 rounded-full bg-pink" />
+                          )}
+                          <span className="text-sm text-ink-light whitespace-nowrap">{timeAgo(notif.time)}</span>
+                        </div>
                       </div>
-                      <p className="mt-0.5 text-xs text-ink-muted line-clamp-2">{notif.message}</p>
+                      <p className="mt-1 text-sm text-ink-muted leading-relaxed">{notif.message}</p>
                       
                       {/* Expanded detail — does NOT navigate away */}
                       {isExpanded && notif.detail && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="mt-3 rounded-lg bg-lilac-soft/30 p-3"
+                          className="mt-4 rounded-xl bg-lilac-50 p-4 border border-lilac-soft/50"
                         >
-                          <p className="text-xs text-ink leading-relaxed">{notif.detail}</p>
-                          <p className="mt-2 text-[10px] text-ink-muted">
+                          <p className="text-sm text-ink leading-relaxed">{notif.detail}</p>
+                          <p className="mt-2 text-xs text-ink-muted">
                             {new Date(notif.time).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
                           </p>
                         </motion.div>
                       )}
-                      
-                      <p className="mt-1 text-[10px] text-ink-muted/60">{timeAgo(notif.time)}</p>
                     </div>
                     {!notif.read && (
                       <button
                         onClick={(e) => { e.stopPropagation(); markAsRead(notif.id) }}
-                        className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-lilac-soft/30 transition-colors"
+                        className="shrink-0 rounded-lg p-2.5 text-ink-muted hover:bg-lilac-soft/30 transition-colors"
                         title="Mark as read"
                       >
-                        <Check size={14} />
+                        <Check size={16} />
                       </button>
                     )}
                   </div>

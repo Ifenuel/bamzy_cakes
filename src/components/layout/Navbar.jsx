@@ -70,7 +70,7 @@ export default function Navbar() {
       <header
         style={{
           boxShadow: isScrolled ? '0 4px 30px -4px rgba(111,74,168,0.12)' : 'none',
-          backgroundColor: isScrolled ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.95)',
+          backgroundColor: isScrolled ? 'var(--c-header-scroll)' : 'var(--c-header)',
           transition: 'all 0.3s ease',
         }}
         className="sticky top-0 z-40 border-b border-lilac-soft/40 backdrop-blur-md"
@@ -154,7 +154,8 @@ export default function Navbar() {
       {/* ── Sidebar ── */}
       <aside
         ref={sidebarRef}
-        className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col shadow-2xl transition-transform duration-300 ease-in-out"
+        style={{ backgroundColor: 'var(--c-bg-card)' }}
         style={{
           transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)',
         }}
