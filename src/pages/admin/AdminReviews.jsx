@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Star, Trash2, Eye, EyeOff, MessageCircle } from 'lucide-react'
+import { Star, Trash2, CheckCircle, XCircle, MessageCircle, Shield } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../../components/ui/Toast.jsx'
 
@@ -21,9 +21,7 @@ export default function AdminReviews() {
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
-  useEffect(() => {
-    loadReviews()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadReviews() }, [])
 
   async function loadReviews() {
     try {
@@ -43,7 +41,7 @@ export default function AdminReviews() {
         body: JSON.stringify({ is_approved: !current }),
       })
       setReviews((prev) => prev.map((r) => r.id === id ? { ...r, isApproved: !current } : r))
-      showToast(current ? 'Review hidden' : 'Review approved', 'success')
+      showToast(current ? 'Review hidden from website' : 'Review approved and visible on website', 'success')
     } catch (err) {
       showToast(err.message || 'Failed', 'error')
     }
@@ -56,7 +54,7 @@ export default function AdminReviews() {
       await adminRequest(`/reviews/admin/${id}`, { method: 'DELETE' })
       setReviews((prev) => prev.filter((r) => r.id !== id))
       setDeleteConfirm(null)
-      showToast('Review deleted', 'info')
+      showToast('Review deleted permanently', 'info')
     } catch (err) {
       showToast(err.message || 'Failed', 'error')
     }
@@ -78,7 +76,7 @@ export default function AdminReviews() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink sm:text-3xl">Reviews</h1>
-        <p className="mt-1 text-sm text-ink-muted">Manage customer reviews and feedback.</p>
+        <p className="mt-1 text-sm text-ink-muted">Approve reviews to show them on the website. Only approved reviews appear in "What Our Customers Say".</p>
       </div>
 
       {/* Stats */}
@@ -111,33 +109,56 @@ export default function AdminReviews() {
       {/* Reviews List */}
       <div className="space-y-3">
         {filtered.map((review) => (
-          <motion.div key={review.id} layout className="rounded-xl border border-lilac-soft bg-white p-4 shadow-sm sm:p-5">
+          <motion.div key={review.id} layout className={`rounded-xl border p-4 sm:p-5 shadow-sm ${
+            review.isApproved ? 'border-green-200 bg-green-50/30' : 'border-yellow-200 bg-yellow-50/30'
+          }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex gap-0.5 text-pink">
                     {Array.from({ length: review.rating }).map((_, i) => (
                       <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
                     ))}
                   </div>
                   <span className="text-xs text-ink-muted">{fd(review.createdAt)}</span>
-                  {!review.isApproved && (
-                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-700">Pending</span>
+                  {review.isApproved ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                      <CheckCircle size={10} /> Approved — visible on website
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-700">
+                      <Shield size={10} /> Pending — hidden from website
+                    </span>
                   )}
                 </div>
                 <p className="mt-2 text-sm text-ink">&ldquo;{review.text}&rdquo;</p>
                 <p className="mt-2 text-xs font-medium text-ink-muted">&mdash; {review.customerName}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => toggleApproval(review.id, review.isApproved)} title={review.isApproved ? 'Hide' : 'Approve'}
-                  className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-lilac-soft hover:text-pink">
-                  {review.isApproved ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <button onClick={() => setDeleteConfirm(review)} title="Delete"
-                  className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-red-50 hover:text-red-500">
-                  <Trash2 size={16} />
-                </button>
-              </div>
+            </div>
+
+            {/* Action Buttons — big and clear */}
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-lilac-soft/60 pt-3">
+              <button
+                onClick={() => toggleApproval(review.id, review.isApproved)}
+                className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all ${
+                  review.isApproved
+                    ? 'border-2 border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                    : 'bg-brand-gradient text-white shadow-sm hover:shadow-card'
+                }`}
+              >
+                {review.isApproved ? (
+                  <><XCircle size={16} /> Hide from Website</>
+                ) : (
+                  <><CheckCircle size={16} /> Approve & Show on Website</>
+                )}
+              </button>
+
+              <button
+                onClick={() => setDeleteConfirm(review)}
+                className="flex items-center gap-2 rounded-full border-2 border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50"
+              >
+                <Trash2 size={16} /> Delete Review
+              </button>
             </div>
           </motion.div>
         ))}

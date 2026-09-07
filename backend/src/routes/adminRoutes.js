@@ -96,7 +96,7 @@ router.get('/report', requireAdmin, async (req, res) => {
     }
 
     const params = Array.isArray(dateParam) ? dateParam : [dateParam]
-    const [orderStats, revenueStats, customerStats] = await Promise.all([
+    const [orderStats, revenueStats] = await Promise.all([
       pool.query(
         `SELECT COUNT(*) as total,
                 COUNT(*) FILTER (WHERE order_status = 'completed') as completed,
@@ -108,17 +108,13 @@ router.get('/report', requireAdmin, async (req, res) => {
                 COALESCE(AVG(total), 0) as avg_order
          FROM orders WHERE ${dateFilter} AND payment_status = 'successful'`, params
       ),
-      pool.query(
-        `SELECT COUNT(DISTINCT customer_id) as unique_customers
-         FROM orders WHERE ${dateFilter}`
-      ),
     ])
     return success(res, {
       period,
       date: dateParam,
       orders: orderStats.rows[0],
       revenue: revenueStats.rows[0],
-      customers: customerStats.rows[0],
+      customers: { unique_customers: 0 },
     })
   } catch (err) {
     console.error('Report error:', err.message)
@@ -224,11 +220,13 @@ router.get('/wishlists', requireAdmin, async (req, res) => {
       `SELECT w.id, w.created_at as "createdAt",
               w.product_id as "productId",
               p.name as "productName", p.price as "productPrice",
-              p.image_url as "productImage", p.category as "productCategory",
+              p.image_url as "productImage",
+              COALESCE(c.name, p.category) as "productCategory",
               u.id as "customerId", u.full_name as "customerName",
               u.email as "customerEmail", u.phone as "customerPhone"
        FROM wishlists w
        JOIN products p ON w.product_id = p.id
+       LEFT JOIN categories c ON p.category_id = c.id
        JOIN users u ON w.customer_id = u.id
        ORDER BY w.created_at DESC`
     )

@@ -10,7 +10,12 @@ const router = Router()
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, customer_name, rating, text, created_at FROM reviews WHERE is_approved = true ORDER BY created_at DESC LIMIT 20"
+      `SELECT r.id, r.customer_name, r.rating, r.text, r.created_at,
+              u.avatar_url as "avatarUrl"
+       FROM reviews r
+       LEFT JOIN users u ON r.customer_id = u.id
+       WHERE r.is_approved = true
+       ORDER BY r.created_at DESC LIMIT 20`
     )
     return success(res, result.rows)
   } catch (err) {

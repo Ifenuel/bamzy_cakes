@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Star, MessageCircle, Send, CheckCircle } from 'lucide-react'
-import { apiGetReviews, apiSubmitReview } from '../../utils/api.js'
+import { apiGetReviews, apiSubmitReview, getImgUrl } from '../../utils/api.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import ScrollReveal, { StaggerContainer, StaggerItem } from '../ui/ScrollReveal.jsx'
 
@@ -180,9 +180,14 @@ export default function ReviewsSection() {
                     &ldquo;{review.text}&rdquo;
                   </p>
                   <div className="flex items-center gap-2 border-t border-lilac-soft/60 pt-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient-soft text-xs font-bold text-lilac-deep">
-                      {review.customer_name?.charAt(0)?.toUpperCase()}
-                    </div>
+                    {review.avatarUrl ? (
+                      <img src={getImgUrl(review.avatarUrl)} alt={review.customer_name}
+                        className="h-8 w-8 rounded-full object-cover ring-2 ring-lilac-soft" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
+                        {review.customer_name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
                     <p className="text-sm font-semibold text-ink">{review.customer_name}</p>
                   </div>
                 </div>
