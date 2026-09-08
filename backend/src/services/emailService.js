@@ -4,7 +4,9 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'bamzycakes621@gmail.com'
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Bamzy Cakes & Confectionery'
 const CLIENT_URL = process.env.CLIENT_URL || 'https://bamzy-cakes.vercel.app'
-const LOGO_URL = `${CLIENT_URL}/logo.jpg`
+
+// Use Cloudinary-hosted logo — works reliably in ALL email clients (Gmail, Apple Mail, Outlook)
+const LOGO_URL = 'https://res.cloudinary.com/pqgyfjto/image/upload/v1788861159/bamzy-cakes/bamzy-email-logo-v2.jpg'
 
 let client = null
 
@@ -15,76 +17,103 @@ function getBrevoClient() {
   return client
 }
 
-/**
- * Send a professional OTP verification email
- */
-export async function sendOtpEmail(toEmail, otpCode, userName) {
-  const brevo = getBrevoClient()
+/* ═══════════════════════════════════════════════════════
+   SHARED EMAIL HELPERS — consistent header & footer
+   ═══════════════════════════════════════════════════════ */
 
-  const htmlContent = `
+function emailHeader(title, subtitle) {
+  return `
+  <tr>
+    <td style="background:linear-gradient(135deg,#6F4AA8 0%,#A97BD6 50%,#F04B8A 100%);padding:48px 30px 40px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Bamzy Cakes & Confectionery" width="120" height="120" style="display:block;margin:0 auto 16px;border-radius:16px;border:4px solid rgba(255,255,255,0.25);" />
+      <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px;">${title}</h1>
+      ${subtitle ? `<p style="color:rgba(255,255,255,0.9);font-size:13px;margin:8px 0 0;letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">${subtitle}</p>` : ''}
+    </td>
+  </tr>`
+}
+
+function emailFooter() {
+  return `
+  <tr>
+    <td style="background:#1a1025;padding:28px 30px;text-align:center;border-radius:0 0 16px 16px;">
+      <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 10px;font-weight:500;">
+        Bamzy Cakes &amp; Confectionery &bull; Ibadan &amp; Southwest Nigeria
+      </p>
+      <p style="margin:0 0 12px;">
+        <a href="https://instagram.com/bamzycakes" style="color:#D4A5FF;text-decoration:none;font-size:12px;margin:0 8px;">Instagram</a>
+        &bull;
+        <a href="https://wa.me/2347033374470" style="color:#D4A5FF;text-decoration:none;font-size:12px;margin:0 8px;">WhatsApp</a>
+      </p>
+      <p style="color:rgba(255,255,255,0.35);font-size:10px;margin:0;line-height:1.5;">
+        &copy; ${new Date().getFullYear()} Bamzy Cakes &amp; Confectionery. All rights reserved.
+      </p>
+    </td>
+  </tr>`
+}
+
+function emailBody(content) {
+  return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#F3EEFA;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F3EEFA;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
-              <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
-              <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
-              <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:40px 30px;">
-              <h2 style="color:#24172F;font-size:22px;margin:0 0 10px;">Welcome to Bamzy 💗</h2>
-              <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                Hi ${userName || 'there'},
-              </p>
-              <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                Thank you for creating a Bamzy account! To complete your registration, please use the verification code below:
-              </p>
-
-              <!-- OTP Code Box -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:linear-gradient(135deg,#F8F4FD 0%,#FFF5F9 100%);border:2px dashed #EDE1F8;border-radius:12px;padding:24px;text-align:center;">
-                    <p style="color:#756B7E;font-size:12px;margin:0 0 8px;letter-spacing:1px;text-transform:uppercase;">Your Verification Code</p>
-                    <p style="color:#6F4AA8;font-size:36px;font-weight:bold;letter-spacing:8px;margin:0;font-family:Georgia,serif;">${otpCode}</p>
-                    <p style="color:#A39BA9;font-size:12px;margin:12px 0 0;">This code expires in 10 minutes</p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="color:#756B7E;font-size:14px;line-height:1.6;margin:0 0 16px;">
-                If you did not create an account with Bamzy Cakes &amp; Confectionery, please ignore this email. Your account will not be created until you verify your email.
-              </p>
-
-              <!-- Divider -->
-              <hr style="border:none;border-top:1px solid #EDE1F8;margin:24px 0;">
-
-              <!-- Footer -->
-              <p style="color:#A39BA9;font-size:12px;text-align:center;margin:0;">
-                Bamzy Cakes &amp; Confectionery &bull; Ibadan, Nigeria<br>
-                <a href="https://instagram.com/bamzycakes" style="color:#A97BD6;text-decoration:none;">Instagram</a> &bull;
-                <a href="https://wa.me/2347033374470" style="color:#A97BD6;text-decoration:none;">WhatsApp</a>
-              </p>
-            </td>
-          </tr>
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.10);max-width:600px;">
+          ${content}
         </table>
       </td>
     </tr>
   </table>
 </body>
 </html>`
+}
+
+/**
+ * Send a professional OTP verification email
+ */
+export async function sendOtpEmail(toEmail, otpCode, userName) {
+  const brevo = getBrevoClient()
+
+  const htmlContent = emailBody(`
+    ${emailHeader('Verify Your Email', 'One quick step')}
+
+    <tr>
+      <td style="padding:40px 36px;">
+        <p style="color:#1a1025;font-size:16px;line-height:1.6;margin:0 0 8px;font-weight:600;">
+          Hi ${userName || 'there'} 👋
+        </p>
+        <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 28px;">
+          Thank you for joining Bamzy Cakes &amp; Confectionery! Please use the verification code below to complete your registration:
+        </p>
+
+        <!-- OTP Code Box -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#F3EEFA 0%,#FFF5F9 100%);border:2px dashed #C9B3E8;border-radius:14px;padding:28px 20px;text-align:center;">
+              <p style="color:#6b7280;font-size:11px;margin:0 0 10px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Your Verification Code</p>
+              <p style="color:#6F4AA8;font-size:40px;font-weight:800;letter-spacing:10px;margin:0;font-family:Georgia,serif;">${otpCode}</p>
+              <p style="color:#9CA3AF;font-size:12px;margin:14px 0 0;">This code expires in <strong style="color:#6F4AA8;">10 minutes</strong></p>
+            </td>
+          </tr>
+        </table>
+
+        <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 20px;">
+          If you did not create an account with Bamzy Cakes, please ignore this email. Your account will not be created until you verify.
+        </p>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `)
 
   const request = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
@@ -110,106 +139,87 @@ export async function sendOtpEmail(toEmail, otpCode, userName) {
 export async function sendWelcomeEmail(toEmail, userName) {
   const brevo = getBrevoClient()
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
+  const htmlContent = emailBody(`
+    ${emailHeader('Welcome to the Family!', 'Your Bamzy journey begins')}
+
     <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
-              <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
-              <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
-              <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
-            </td>
-          </tr>
+      <td style="padding:40px 36px;">
+        <p style="color:#1a1025;font-size:16px;line-height:1.6;margin:0 0 8px;font-weight:600;">
+          Hi ${userName || 'there'} 🎉
+        </p>
+        <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 28px;">
+          Welcome to the Bamzy family! Your account is all set. Here's what you can do from your personal dashboard:
+        </p>
 
-          <!-- Body -->
+        <!-- Feature List -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
           <tr>
-            <td style="padding:40px 30px;">
-              <h2 style="color:#24172F;font-size:22px;margin:0 0 10px;">You're In! 🎉</h2>
-              <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                Hi ${userName || 'there'},
-              </p>
-              <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                Welcome to the Bamzy family! Your account has been created and your email has been verified. You're all set to explore our delicious treats.
-              </p>
-
-              <!-- What You Can Do -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <td style="background:linear-gradient(135deg,#F3EEFA 0%,#FFF5F9 100%);border-radius:14px;padding:24px 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#F8F4FD 0%,#FFF5F9 100%);border-radius:12px;padding:24px;">
-                    <h3 style="color:#24172F;font-size:16px;margin:0 0 16px;">Here's what you can do:</h3>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding:8px 0;vertical-align:top;">
-                          <span style="color:#F04B8A;font-size:16px;">🧁</span>
-                          <span style="color:#24172F;font-size:14px;margin-left:8px;">Browse and order our freshly baked treats</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;vertical-align:top;">
-                          <span style="color:#F04B8A;font-size:16px;">🎂</span>
-                          <span style="color:#24172F;font-size:14px;margin-left:8px;">Book Bamzy for your next event or celebration</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;vertical-align:top;">
-                          <span style="color:#F04B8A;font-size:16px;">📚</span>
-                          <span style="color:#24172F;font-size:14px;margin-left:8px;">Register for hands-on baking training classes</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;vertical-align:top;">
-                          <span style="color:#F04B8A;font-size:16px;">💗</span>
-                          <span style="color:#24172F;font-size:14px;margin-left:8px;">Track all your orders and bookings in one place</span>
-                        </td>
-                      </tr>
-                    </table>
+                  <td style="padding:10px 0;vertical-align:top;width:36px;">
+                    <span style="display:inline-block;width:28px;height:28px;background:#6F4AA8;color:#fff;border-radius:8px;text-align:center;line-height:28px;font-size:14px;font-weight:700;">1</span>
+                  </td>
+                  <td style="padding:10px 0;vertical-align:top;">
+                    <p style="color:#1a1025;font-size:14px;margin:0 0 2px;font-weight:600;">Browse &amp; Order Fresh Treats</p>
+                    <p style="color:#6b7280;font-size:13px;margin:0;">Cakes, pastries, small chops, and more — delivered to your door.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;vertical-align:top;width:36px;">
+                    <span style="display:inline-block;width:28px;height:28px;background:#A97BD6;color:#fff;border-radius:8px;text-align:center;line-height:28px;font-size:14px;font-weight:700;">2</span>
+                  </td>
+                  <td style="padding:10px 0;vertical-align:top;">
+                    <p style="color:#1a1025;font-size:14px;margin:0 0 2px;font-weight:600;">Book Events &amp; Catering</p>
+                    <p style="color:#6b7280;font-size:13px;margin:0;">Weddings, birthdays, corporate events — we handle the sweets.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;vertical-align:top;width:36px;">
+                    <span style="display:inline-block;width:28px;height:28px;background:#F04B8A;color:#fff;border-radius:8px;text-align:center;line-height:28px;font-size:14px;font-weight:700;">3</span>
+                  </td>
+                  <td style="padding:10px 0;vertical-align:top;">
+                    <p style="color:#1a1025;font-size:14px;margin:0 0 2px;font-weight:600;">Join Baking Training</p>
+                    <p style="color:#6b7280;font-size:13px;margin:0;">Learn the art of baking from Bamzy's expert chefs.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;vertical-align:top;width:36px;">
+                    <span style="display:inline-block;width:28px;height:28px;background:#10B981;color:#fff;border-radius:8px;text-align:center;line-height:28px;font-size:14px;font-weight:700;">4</span>
+                  </td>
+                  <td style="padding:10px 0;vertical-align:top;">
+                    <p style="color:#1a1025;font-size:14px;margin:0 0 2px;font-weight:600;">Track Every Order</p>
+                    <p style="color:#6b7280;font-size:13px;margin:0;">Real-time updates on preparation, delivery, and status.</p>
                   </td>
                 </tr>
               </table>
-
-              <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-                <tr>
-                  <td align="center">
-                    <a href="${CLIENT_URL}/shop" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
-                      Start Shopping
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="color:#756B7E;font-size:14px;line-height:1.6;margin:0 0 16px;">
-                If you ever need help, just reply to this email or reach us on <a href="https://wa.me/2347033374470" style="color:#A97BD6;">WhatsApp</a>. We're always here for you!
-              </p>
-
-              <!-- Divider -->
-              <hr style="border:none;border-top:1px solid #EDE1F8;margin:24px 0;">
-
-              <!-- Footer -->
-              <p style="color:#A39BA9;font-size:12px;text-align:center;margin:0;">
-                With love from Bamzy 💗<br>
-                Bamzy Cakes &amp; Confectionery &bull; Ibadan, Nigeria<br>
-                <a href="https://instagram.com/bamzycakes" style="color:#A97BD6;text-decoration:none;">Instagram</a> &bull;
-                <a href="https://wa.me/2347033374470" style="color:#A97BD6;text-decoration:none;">WhatsApp</a>
-              </p>
             </td>
           </tr>
         </table>
+
+        <!-- CTA Button -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+          <tr>
+            <td align="center">
+              <a href="${CLIENT_URL}/shop" style="display:inline-block;background:linear-gradient(135deg,#6F4AA8 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:0.5px;box-shadow:0 4px 16px rgba(240,75,138,0.3);">
+                Start Shopping →
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+          Need help? Just reply to this email or reach us on
+          <a href="https://wa.me/2347033374470" style="color:#6F4AA8;font-weight:600;text-decoration:none;">WhatsApp</a>.
+          We're always here for you!
+        </p>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
       </td>
     </tr>
-  </table>
-</body>
-</html>`
+
+    ${emailFooter()}
+  `)
 
   const request = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
@@ -235,42 +245,46 @@ export async function sendWelcomeEmail(toEmail, userName) {
 export async function sendPasswordResetEmail(toEmail, resetLink, userName) {
   const brevo = getBrevoClient()
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-        <tr>
-          <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
-            <img src="${LOGO_URL}" alt="Bamzy Cakes" width="60" height="60" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" />
-            <h1 style="color:#ffffff;font-size:26px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
-            <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;letter-spacing:2px;text-transform:uppercase;">&amp; Confectionery</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:40px 30px;">
-            <h2 style="color:#24172F;font-size:22px;margin:0 0 16px;">Password Reset Request</h2>
-            <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 24px;">
-              Hi ${userName || 'there'}, we received a request to reset your password. Click the button below to set a new one:
-            </p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-              <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+  const htmlContent = emailBody(`
+    ${emailHeader('Password Reset', 'Secure your account')}
+
+    <tr>
+      <td style="padding:40px 36px;">
+        <p style="color:#1a1025;font-size:16px;line-height:1.6;margin:0 0 8px;font-weight:600;">
+          Hi ${userName || 'there'},
+        </p>
+        <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 28px;">
+          We received a request to reset your Bamzy account password. Tap the button below to create a new one:
+        </p>
+
+        <!-- CTA Button -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+          <tr>
+            <td align="center">
+              <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#6F4AA8 0%,#F04B8A 100%);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:0.5px;box-shadow:0 4px 16px rgba(240,75,138,0.3);">
                 Reset My Password
               </a>
-            </td></tr></table>
-            <div style="background:#FFF5F9;border-radius:12px;padding:16px;margin:24px 0;">
-              <p style="color:#A39BA9;font-size:13px;margin:0;text-align:center;">⏰ This link expires in <strong style="color:#F04B8A;">5 minutes</strong>. If you didn't request this, please ignore this email.</p>
-            </div>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+            </td>
+          </tr>
+        </table>
+
+        <!-- Expiry Warning -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+          <tr>
+            <td style="background:#FFF5F9;border-left:4px solid #F04B8A;border-radius:0 10px 10px 0;padding:16px 20px;">
+              <p style="color:#374151;font-size:13px;margin:0;line-height:1.6;">
+                ⏰ This link expires in <strong style="color:#F04B8A;">5 minutes</strong>. If you didn't request this, please ignore this email — your password will remain unchanged.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `)
 
   const request = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
@@ -317,7 +331,7 @@ export async function removeContact(email) {
     await brevo.contacts.deleteContact(email)
     return true
   } catch (err) {
-    console.error(`[BREVO] Failed to remove contact ${email}:`, err.message || err)
+    console.error(`[BREVO] Failed to remove contact:`, err.message || err)
     return false
   }
 }
@@ -330,43 +344,29 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
   let sent = 0
   let failed = 0
 
-  // Build newsletter HTML with a function so each subscriber gets their own unsubscribe link
   function buildNewsletterHtml(subscriberEmail) {
     const unsubscribeUrl = `${CLIENT_URL}/newsletter/unsubscribe?email=${encodeURIComponent(subscriberEmail)}`
-    return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-        <tr>
-          <td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
-            <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
-            <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">Bamzy Cakes</h1>
-            <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;letter-spacing:2px;text-transform:uppercase;">Newsletter</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:40px 30px;">
-            <h2 style="color:#24172F;font-size:20px;margin:0 0 16px;">${subject}</h2>
-            <div style="color:#756B7E;font-size:15px;line-height:1.7;">${message.replace(/\n/g, '<br>')}</div>
-            <hr style="border:none;border-top:1px solid #EDE1F8;margin:30px 0;">
-            <p style="color:#A39BA9;font-size:12px;text-align:center;">
-              Bamzy Cakes &amp; Confectionery &bull; Ibadan, Nigeria<br>
-              <a href="${unsubscribeUrl}" style="color:#A97BD6;">Unsubscribe</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+    return emailBody(`
+      ${emailHeader('Newsletter', 'From the Bamzy Kitchen')}
+
+      <tr>
+        <td style="padding:40px 36px;">
+          <h2 style="color:#1a1025;font-size:22px;margin:0 0 20px;font-family:Georgia,serif;">${subject}</h2>
+          <div style="color:#374151;font-size:15px;line-height:1.8;">${message.replace(/\n/g, '<br>')}</div>
+
+          <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+
+          <p style="color:#6b7280;font-size:12px;text-align:center;margin:0;">
+            You're receiving this because you subscribed to Bamzy's newsletter.<br>
+            <a href="${unsubscribeUrl}" style="color:#6F4AA8;text-decoration:none;font-weight:600;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+
+      ${emailFooter()}
+    `)
   }
 
-  // Send individually so each subscriber gets a personalized unsubscribe link
   for (const email of subscriberEmails) {
     const request = {
       sender: { name: SENDER_NAME, email: SENDER_EMAIL },
@@ -390,17 +390,6 @@ export async function sendNewsletter({ subject, message, subscriberEmails }) {
 }
 
 /**
- * Check Brevo connection status
- */
-export async function checkBrevoStatus() {
-  return {
-    configured: !!BREVO_API_KEY,
-    senderEmail: SENDER_EMAIL,
-    senderName: SENDER_NAME,
-  }
-}
-
-/**
  * Send order confirmation email after successful payment
  */
 export async function sendOrderConfirmation(toEmail, order) {
@@ -409,79 +398,68 @@ export async function sendOrderConfirmation(toEmail, order) {
 
   const items = (order.items || []).map(item => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #F3E8FF;">
+      <td style="padding:12px 0;border-bottom:1px solid #F3E8FF;">
         <p style="margin:0;font-size:14px;font-weight:600;color:#1a1025;">${item.product_name || item.name || 'Product'}</p>
-        <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">Qty: ${item.quantity} × ₦${Number(item.unit_price || item.price || 0).toLocaleString()}</p>
+        <p style="margin:3px 0 0;font-size:12px;color:#6b7280;">Qty: ${item.quantity} × ₦${Number(item.unit_price || item.price || 0).toLocaleString()}</p>
       </td>
-      <td style="padding:10px 0;border-bottom:1px solid #F3E8FF;text-align:right;">
-        <p style="margin:0;font-size:14px;font-weight:600;color:#F04B8A;">₦${Number(item.total_price || item.subtotal || 0).toLocaleString()}</p>
+      <td style="padding:12px 0;border-bottom:1px solid #F3E8FF;text-align:right;">
+        <p style="margin:0;font-size:14px;font-weight:700;color:#F04B8A;">₦${Number(item.total_price || item.subtotal || 0).toLocaleString()}</p>
       </td>
     </tr>`).join('')
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-        <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
-          <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
-          <h1 style="color:#ffffff;font-size:28px;margin:0;font-family:Georgia,serif;">Order Confirmed! 🎉</h1>
-          <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:8px 0 0;">Thank you for your order</p>
-        </td></tr>
+  const htmlContent = emailBody(`
+    ${emailHeader('Order Confirmed!', 'Thank you for your order')}
 
-        <!-- Body -->
-        <tr><td style="padding:30px;">
-          <p style="font-size:15px;color:#1a1025;margin:0 0 8px;">Dear <strong>${order.customer_name || 'Customer'}</strong>,</p>
-          <p style="font-size:14px;color:#6b7280;margin:0 0 20px;line-height:1.6;">Your order has been confirmed and payment received. We are preparing your treats with love!</p>
+    <tr>
+      <td style="padding:36px;">
+        <p style="font-size:15px;color:#1a1025;margin:0 0 8px;font-weight:600;">
+          Dear ${order.customer_name || 'Customer'},
+        </p>
+        <p style="font-size:14px;color:#374151;margin:0 0 24px;line-height:1.7;">
+          Your order has been confirmed and payment received. We're preparing your treats with love!
+        </p>
 
-          <!-- Order Info -->
-          <div style="background:#F8F4FD;border-radius:12px;padding:20px;margin-bottom:20px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Order Number</span></td>
-                <td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">#${order.orderNumber || order.id?.slice(0, 8) || ''}</span></td>
-              </tr>
-              <tr>
-                <td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Delivery Method</span></td>
-                <td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;text-transform:capitalize;">${order.delivery_method || 'delivery'}</span></td>
-              </tr>
-              ${order.delivery_address ? `<tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Delivery Address</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${order.delivery_address}${order.delivery_city ? ', ' + order.delivery_city : ''}</span></td></tr>` : ''}
-            </table>
-          </div>
-
-          <!-- Items -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-            <tr><td colspan="2"><p style="font-size:13px;font-weight:600;color:#1a1025;margin:0 0 8px;">Order Items</p></td></tr>
-            ${items}
+        <!-- Order Info -->
+        <div style="background:#F3EEFA;border-radius:14px;padding:20px;margin-bottom:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Order Number</span></td>
+              <td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:700;color:#1a1025;">#${order.orderNumber || order.id?.slice(0, 8) || ''}</span></td>
+            </tr>
+            <tr>
+              <td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Delivery Method</span></td>
+              <td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;text-transform:capitalize;">${order.delivery_method || 'delivery'}</span></td>
+            </tr>
+            ${order.delivery_address ? `<tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Delivery Address</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${order.delivery_address}${order.delivery_city ? ', ' + order.delivery_city : ''}</span></td></tr>` : ''}
           </table>
+        </div>
 
-          <!-- Total -->
-          <div style="border-top:2px solid #F3E8FF;padding-top:16px;margin-top:16px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:4px 0;"><span style="font-size:14px;font-weight:700;color:#1a1025;">Total Paid</span></td>
-                <td style="padding:4px 0;text-align:right;"><span style="font-size:18px;font-weight:700;color:#F04B8A;">₦${Number(order.total || 0).toLocaleString()}</span></td>
-              </tr>
-            </table>
-          </div>
+        <!-- Items -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+          <tr><td colspan="2"><p style="font-size:13px;font-weight:700;color:#1a1025;margin:0 0 10px;text-transform:uppercase;letter-spacing:1px;">Order Items</p></td></tr>
+          ${items}
+        </table>
 
-          <p style="font-size:13px;color:#6b7280;margin:20px 0 0;line-height:1.6;">We will notify you when your order is on the way. You can track your order in your Bamzy account.</p>
-        </td></tr>
+        <!-- Total -->
+        <div style="border-top:2px solid #EDE1F8;padding-top:16px;margin-top:16px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:5px 0;"><span style="font-size:15px;font-weight:700;color:#1a1025;">Total Paid</span></td>
+              <td style="padding:5px 0;text-align:right;"><span style="font-size:20px;font-weight:800;color:#F04B8A;">₦${Number(order.total || 0).toLocaleString()}</span></td>
+            </tr>
+          </table>
+        </div>
 
-        <!-- Footer -->
-        <tr><td style="background:#1a1025;padding:24px 30px;text-align:center;">
-          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:0;">Bamzy Cakes & Confectionery · Ibadan & Southwest Nigeria</p>
-          <p style="color:rgba(255,255,255,0.3);font-size:10px;margin:6px 0 0;">This email was sent after your order was confirmed.</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+        <p style="font-size:13px;color:#6b7280;margin:24px 0 0;line-height:1.7;">
+          We'll notify you when your order is on the way. You can track everything from your <a href="${CLIENT_URL}/account" style="color:#6F4AA8;font-weight:600;text-decoration:none;">Bamzy dashboard</a>.
+        </p>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `)
 
   try {
     await brevo.transactionalEmails.sendTransacEmail({
@@ -503,41 +481,30 @@ export async function sendContactMessage({ name, email, phone, subject, message 
   if (!BREVO_API_KEY) return false
   const brevo = getBrevoClient()
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-        <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:30px;text-align:center;">
-          <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
-          <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">New Contact Message</h1>
-          <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;">From Bamzy Cakes Website</p>
-        </td></tr>
-        <tr><td style="padding:30px;">
-          <div style="background:#F8F4FD;border-radius:12px;padding:20px;margin-bottom:20px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">From</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${name}</span></td></tr>
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Email</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${email || 'Not provided'}</span></td></tr>
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Phone</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${phone || 'Not provided'}</span></td></tr>
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Subject</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;text-transform:capitalize;">${subject || 'General Enquiry'}</span></td></tr>
-            </table>
-          </div>
-          <p style="font-size:13px;font-weight:600;color:#1a1025;margin:0 0 8px;">Message:</p>
-          <div style="background:#fff;border:1px solid #EDE1F8;border-radius:12px;padding:16px;">
-            <p style="font-size:14px;color:#4a4458;line-height:1.7;margin:0;">${message.replace(/\n/g, '<br>')}</p>
-          </div>
-        </td></tr>
-        <tr><td style="background:#1a1025;padding:20px 30px;text-align:center;">
-          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:0;">Bamzy Cakes & Confectionery — Website Contact Form</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+  const htmlContent = emailBody(`
+    ${emailHeader('New Contact Message', 'From your website')}
+
+    <tr>
+      <td style="padding:36px;">
+        <div style="background:#F3EEFA;border-radius:14px;padding:20px;margin-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">From</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${name}</span></td></tr>
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Email</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${email || 'Not provided'}</span></td></tr>
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Phone</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${phone || 'Not provided'}</span></td></tr>
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Subject</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;text-transform:capitalize;">${subject || 'General Enquiry'}</span></td></tr>
+          </table>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:#1a1025;margin:0 0 10px;text-transform:uppercase;letter-spacing:1px;">Message</p>
+        <div style="background:#fff;border:1px solid #EDE1F8;border-radius:14px;padding:20px;">
+          <p style="font-size:14px;color:#374151;line-height:1.8;margin:0;">${message.replace(/\n/g, '<br>')}</p>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `)
 
   try {
     await brevo.transactionalEmails.sendTransacEmail({
@@ -565,45 +532,36 @@ export async function sendLoginNotification(toEmail, userName, ipAddress) {
   const now = new Date()
   const timeStr = now.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#F8F4FD;font-family:'Segoe UI',Tahoma,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F4FD;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(111,74,168,0.12);">
-        <tr><td style="background:linear-gradient(135deg,#A97BD6 0%,#F04B8A 100%);padding:40px 30px;text-align:center;">
-          <img src="${LOGO_URL}" alt="Bamzy Cakes" width="50" height="50" style="border-radius:50%;border:2px solid rgba(255,255,255,0.3);margin-bottom:10px;" />
-          <h1 style="color:#ffffff;font-size:24px;margin:0;font-family:Georgia,serif;">Login Alert</h1>
-          <p style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0 0;">Bamzy Cakes & Confectionery</p>
-        </td></tr>
-        <tr><td style="padding:40px 30px;">
-          <h2 style="color:#24172F;font-size:20px;margin:0 0 16px;">New Login Detected</h2>
-          <p style="color:#756B7E;font-size:15px;line-height:1.6;margin:0 0 20px;">
-            Hi ${userName || 'there'}, we noticed a new login to your Bamzy account. Here are the details:
+  const htmlContent = emailBody(`
+    ${emailHeader('Login Alert', 'Security notification')}
+
+    <tr>
+      <td style="padding:40px 36px;">
+        <h2 style="color:#1a1025;font-size:20px;margin:0 0 16px;">New Login Detected</h2>
+        <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 24px;">
+          Hi ${userName || 'there'}, we noticed a new login to your Bamzy account:
+        </p>
+
+        <div style="background:#F3EEFA;border-radius:14px;padding:20px;margin-bottom:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Account</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${toEmail}</span></td></tr>
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">Time</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${timeStr}</span></td></tr>
+            <tr><td style="padding:5px 0;"><span style="font-size:12px;color:#6b7280;">IP Address</span></td><td style="padding:5px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${ipAddress || 'Unknown'}</span></td></tr>
+          </table>
+        </div>
+
+        <div style="background:#FFF5F9;border-left:4px solid #F04B8A;border-radius:0 10px 10px 0;padding:16px 20px;margin:0 0 24px;">
+          <p style="color:#374151;font-size:13px;margin:0;line-height:1.7;">
+            <strong style="color:#F04B8A;">Was this you?</strong> If you did not log in, please change your password immediately or contact our support team.
           </p>
-          <div style="background:#F8F4FD;border-radius:12px;padding:20px;margin-bottom:20px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Account</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${toEmail}</span></td></tr>
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">Time</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${timeStr}</span></td></tr>
-              <tr><td style="padding:4px 0;"><span style="font-size:12px;color:#6b7280;">IP Address</span></td><td style="padding:4px 0;text-align:right;"><span style="font-size:13px;font-weight:600;color:#1a1025;">${ipAddress || 'Unknown'}</span></td></tr>
-            </table>
-          </div>
-          <div style="background:#FFF5F9;border-left:4px solid #F04B8A;border-radius:0 8px 8px 0;padding:16px;margin:24px 0;">
-            <p style="color:#756B7E;font-size:13px;margin:0;line-height:1.6;">
-              <strong style="color:#F04B8A;">Was this you?</strong> If you did not log in, please change your password immediately or contact our support team.
-            </p>
-          </div>
-        </td></tr>
-        <tr><td style="background:#1a1025;padding:20px 30px;text-align:center;">
-          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:0;">Bamzy Cakes & Confectionery &bull; Ibadan, Nigeria</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+        </div>
+
+        <hr style="border:none;border-top:1px solid #EDE1F8;margin:28px 0;">
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `)
 
   try {
     await brevo.transactionalEmails.sendTransacEmail({
@@ -614,9 +572,18 @@ export async function sendLoginNotification(toEmail, userName, ipAddress) {
       textContent: `New login detected on your Bamzy account at ${timeStr}. IP: ${ipAddress || 'Unknown'}. If this was not you, change your password immediately.`,
     })
     console.log(`[EMAIL] Login notification sent to ${toEmail}`)
-    return true
   } catch (err) {
     console.error(`[EMAIL] Login notification failed:`, err.message || err)
-    return false
+  }
+}
+
+/**
+ * Check Brevo connection status
+ */
+export async function checkBrevoStatus() {
+  return {
+    configured: !!BREVO_API_KEY,
+    senderEmail: SENDER_EMAIL,
+    senderName: SENDER_NAME,
   }
 }
