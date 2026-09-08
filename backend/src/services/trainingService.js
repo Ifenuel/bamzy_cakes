@@ -112,6 +112,23 @@ export async function registerForTraining(trainingId, { customer_id, full_name, 
     `, [trainingId, customer_id || null, full_name, phone, email, number_of_students, amount])
 
     await client.query('COMMIT')
+
+    // Create admin notification
+    try {
+      await pool.query(
+        `INSERT INTO admin_notifications (type, title, message, detail, reference_id, reference_type)
+         VALUES ('training', $1, $2, $3, $4, 'training')`,
+        [
+          'New training registration',
+          `${full_name || 'Customer'} registered for ${training.title || 'a training'}`,
+          `Amount: ₦${Number(amount).toLocaleString('en-NG')}. Students: ${number_of_students}. Status: pending.`,
+          String(regRes.rows[0].id),
+        ]
+      )
+    } catch (e) {
+      console.error('[NOTIFICATION] Failed to create admin notification for training:', e.message)
+    }
+
     return regRes.rows[0]
   } catch (err) {
     await client.query('ROLLBACK')

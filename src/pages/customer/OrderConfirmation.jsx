@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle, ShoppingBag, User, Clock, CreditCard, MapPin, Package } from 'lucide-react'
+import { CheckCircle, ShoppingBag, User, Clock, CreditCard, MapPin, Package, Truck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
@@ -12,10 +12,11 @@ import { getImgUrl } from '../../utils/api.js'
 
 const ORDER_STEPS = [
   { key: 'pending', label: 'Order Placed', icon: Package },
-  { key: 'confirmed', label: 'Confirmed', icon: CheckCircle },
-  { key: 'preparing', label: 'Preparing', icon: Clock },
-  { key: 'ready', label: 'Ready', icon: CheckCircle },
-  { key: 'completed', label: 'Completed', icon: CheckCircle },
+  { key: 'confirmed', label: 'Confirmed by Bamzy', icon: CheckCircle },
+  { key: 'preparing', label: 'Being Prepared', icon: Clock },
+  { key: 'ready', label: 'Ready for Delivery', icon: CheckCircle },
+  { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck },
+  { key: 'completed', label: 'Delivered', icon: CheckCircle },
 ]
 
 const STEP_ORDER = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed']

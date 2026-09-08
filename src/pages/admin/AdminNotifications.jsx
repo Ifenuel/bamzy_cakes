@@ -53,27 +53,50 @@ export default function AdminNotifications() {
 
       if (activityRes.status === 'fulfilled' && activityRes.value?.success) {
         const data = activityRes.value.data
-        ;(data.orders || []).forEach(o => {
-          items.push({
-            id: `order-${o.id}`,
-            type: 'order',
-            title: `New order #${o.orderNumber}`,
-            message: `${o.customerName || 'Customer'} placed an order for ₦${Number(o.total || 0).toLocaleString('en-NG')}`,
-            detail: `Order status: ${o.orderStatus || 'pending'}. Payment: ${o.paymentStatus || 'pending'}. Go to Orders to manage this order and update the status.`,
-            time: o.createdAt,
-            read: false,
+
+        // Use persistent notifications from admin_notifications table if available
+        if (data.notifications && data.notifications.length > 0) {
+          data.notifications.forEach(n => {
+            items.push({
+              id: `db-${n.id}`,
+              type: n.type || 'order',
+              title: n.title,
+              message: n.message,
+              detail: n.detail || '',
+              time: n.createdAt,
+              read: n.isRead,
+              dbId: n.id,
+            })
           })
+        }
+
+        // Also include activity-based notifications (for items not yet in admin_notifications)
+        const existingRefIds = new Set(items.map(i => i.referenceId || '').filter(Boolean))
+        ;(data.orders || []).forEach(o => {
+          if (!existingRefIds.has(o.id)) {
+            items.push({
+              id: `order-${o.id}`,
+              type: 'order',
+              title: `New order #${o.orderNumber}`,
+              message: `${o.customerName || 'Customer'} placed an order for ₦${Number(o.total || 0).toLocaleString('en-NG')}`,
+              detail: `Order status: ${o.orderStatus || 'pending'}. Payment: ${o.paymentStatus || 'pending'}. Go to Orders to manage this order and update the status.`,
+              time: o.createdAt,
+              read: false,
+            })
+          }
         })
         ;(data.bookings || []).forEach(b => {
-          items.push({
-            id: `booking-${b.id}`,
-            type: 'booking',
-            title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`,
-            message: `${b.fullName || 'Customer'} booked an event`,
-            detail: `Event date: ${new Date(b.eventDate).toLocaleDateString('en-NG')}. Status: ${b.status || 'pending'}. Go to Events & Bookings to confirm or update this booking.`,
-            time: b.createdAt,
-            read: false,
-          })
+          if (!existingRefIds.has(b.id)) {
+            items.push({
+              id: `booking-${b.id}`,
+              type: 'booking',
+              title: `New ${b.eventType?.replace(/_/g, ' ') || 'event'} booking`,
+              message: `${b.fullName || 'Customer'} booked an event`,
+              detail: `Event date: ${new Date(b.eventDate).toLocaleDateString('en-NG')}. Status: ${b.status || 'pending'}. Go to Events & Bookings to confirm or update this booking.`,
+              time: b.createdAt,
+              read: false,
+            })
+          }
         })
         ;(data.trainings || []).forEach(t => {
           items.push({
@@ -114,7 +137,10 @@ export default function AdminNotifications() {
     const token = localStorage.getItem('bamzy_token')
     if (token) {
       const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
-      fetch(`${baseUrl}/admin/notifications/${id}/read`, {
+      // Extract numeric DB ID if it's a db- prefixed notification
+      const notif = notifications.find(n => n.id === id)
+      const dbId = notif?.dbId || id
+      fetch(`${baseUrl}/admin/notifications/${dbId}/read`, {
         method: 'PUT',
         headers: { Authorization: 'Bearer ' + token }
       }).catch(() => {})

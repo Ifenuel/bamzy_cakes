@@ -102,6 +102,22 @@ export async function createOrder({ customer_id, customer_name, customer_email, 
 
     await client.query('COMMIT')
 
+    // Create admin notification
+    try {
+      await pool.query(
+        `INSERT INTO admin_notifications (type, title, message, detail, reference_id, reference_type)
+         VALUES ('order', $1, $2, $3, $4, 'order')`,
+        [
+          `New order #${order.orderNumber}`,
+          `${customer_name || 'Customer'} placed an order for ₦${Number(total).toLocaleString('en-NG')}`,
+          `Order status: pending. Payment: pending. Total: ₦${Number(total).toLocaleString('en-NG')}. Delivery: ${delivery_method}.`,
+          String(order.id),
+        ]
+      )
+    } catch (e) {
+      console.error('[NOTIFICATION] Failed to create admin notification for order:', e.message)
+    }
+
     // Fetch complete order with items
     return getOrderById(order.id)
   } catch (err) {

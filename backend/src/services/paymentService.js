@@ -109,9 +109,9 @@ export async function verifyPayment(reference) {
   `, [reference, paymentStatus, JSON.stringify(tx)])
 
   // If payment is for an order, update the order payment status and order status
-  if (tx.metadata?.order_id) {
-    await pool.query(`
-      UPDATE orders SET payment_status = $2, order_status = CASE WHEN $2 = 'successful' THEN 'confirmed' ELSE order_status END, updated_at = NOW()
+  if (tx.metadata?.order_id) {    // Update payment status only — order stays 'pending' until admin confirms
+    await pool.query(
+      `UPDATE orders SET payment_status = $2, updated_at = NOW()
       WHERE id = $1
     `, [tx.metadata.order_id, paymentStatus])
 

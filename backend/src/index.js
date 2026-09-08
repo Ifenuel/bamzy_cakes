@@ -172,6 +172,28 @@ async function start() {
     // Don't exit — let the server continue
   })
 
+  // Auto-migrate: create admin_notifications table if missing
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_notifications (
+        id SERIAL PRIMARY KEY,
+        type TEXT NOT NULL DEFAULT 'order',
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        detail TEXT,
+        reference_id TEXT,
+        reference_type TEXT,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `)
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_admin_notifications_created ON admin_notifications(created_at DESC)').catch(() => {})
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_admin_notifications_read ON admin_notifications(is_read)').catch(() => {})
+    logInfo('admin_notifications table ready')
+  } catch (err) {
+    console.error('[MIGRATE] admin_notifications:', err.message)
+  }
+
   // Start the server
   app.listen(PORT, () => {
     logInfo(`Bamzy Cakes API running on http://localhost:${PORT}`)

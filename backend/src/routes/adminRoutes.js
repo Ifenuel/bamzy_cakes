@@ -10,27 +10,34 @@ const router = Router()
 router.get('/dashboard', requireAdmin, adminController.getDashboard)
 router.get('/customers', requireAdmin, customerController.getCustomers)
 
-// Admin: Mark notification as read (stored in admin_notification_reads table)
+// Admin: Mark notification as read
 router.put('/notifications/:id/read', requireAdmin, async (req, res) => {
   try {
+    // Try marking in admin_notifications table (numeric ID)
+    const numId = parseInt(req.params.id)
+    if (!isNaN(numId)) {
+      await pool.query('UPDATE admin_notifications SET is_read = true WHERE id = $1', [numId])
+    }
+    // Also try old admin_notification_reads table (string key)
     await pool.query(
       `INSERT INTO admin_notification_reads (notification_key, admin_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [req.params.id, req.user.id]
-    )
+    ).catch(() => {})
     return success(res, { message: 'Marked as read' })
   } catch (err) {
-    // If table doesn't exist, just return success (notifications are real-time anyway)
     return success(res, { message: 'Marked as read' })
   }
 })
 
 router.put('/notifications/read-all', requireAdmin, async (req, res) => {
   try {
-    // Mark all current activity items as read by storing a timestamp
+    // Mark all admin notifications as read
+    await pool.query('UPDATE admin_notifications SET is_read = true WHERE is_read = false').catch(() => {})
+    // Also store in old table for compatibility
     await pool.query(
       `INSERT INTO admin_notification_reads (notification_key, admin_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       ['all-' + new Date().toISOString().split('T')[0], req.user.id]
-    )
+    ).catch(() => {})
     return success(res, { message: 'All marked as read' })
   } catch (err) {
     return success(res, { message: 'All marked as read' })
@@ -41,7 +48,7 @@ router.put('/notifications/read-all', requireAdmin, async (req, res) => {
 router.get('/activity', requireAdmin, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20
-    const [recentOrders, recentBookings, recentTrainings, recentReviews] = await Promise.all([
+    const [recentOrders, recentBookings, recentTrainings, recentReviews, dbNotifications] = await Promise.all([
       pool.query(
         `SELECT id, order_number as "orderNumber", customer_name as "customerName",
                 total, order_status as "orderStatus", payment_status as "paymentStatus",
@@ -64,12 +71,19 @@ router.get('/activity', requireAdmin, async (req, res) => {
                 created_at as "createdAt"
          FROM reviews ORDER BY created_at DESC LIMIT $1`, [limit]
       ),
+      pool.query(
+        `SELECT id, type, title, message, detail, reference_id as "referenceId",
+                reference_type as "referenceType", is_read as "isRead",
+                created_at as "createdAt"
+         FROM admin_notifications ORDER BY created_at DESC LIMIT $1`, [limit]
+      ).catch(() => ({ rows: [] })),
     ])
     return success(res, {
       orders: recentOrders.rows,
       bookings: recentBookings.rows,
       trainings: recentTrainings.rows,
       reviews: recentReviews.rows,
+      notifications: dbNotifications.rows,
     })
   } catch (err) {
     console.error('Activity feed error:', err.message)

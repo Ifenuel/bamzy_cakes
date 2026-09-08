@@ -22,6 +22,7 @@ const TABS = [
   { key: 'confirmed', label: 'Confirmed' },
   { key: 'preparing', label: 'Preparing' },
   { key: 'ready', label: 'Ready' },
+  { key: 'out_for_delivery', label: 'Out for Delivery' },
   { key: 'completed', label: 'Completed' },
   { key: 'cancelled', label: 'Cancelled' },
 ]
@@ -252,15 +253,40 @@ export default function AdminOrders() {
                           </div>
                         )}
 
-                        {/* Status Update */}
-                        <div className="flex flex-wrap items-center gap-3">
-                          <p className="text-xs font-semibold text-ink">Update Status:</p>
-                          <select value={o.orderStatus} onChange={(e) => handleStatus(o.id, e.target.value)}
-                            className="rounded-lg border border-lilac-soft bg-white px-3 py-2 text-xs font-medium text-ink focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20">
-                            {STATUSES.map((s) => (
-                              <option key={s} value={s}>{STATUS_CONFIG[s]?.label || s}</option>
-                            ))}
-                          </select>
+                        {/* Status Progression */}
+                        <div>
+                          <p className="text-xs font-semibold text-ink mb-2">Order Progress:</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {STATUSES.filter(s => s !== 'cancelled').map((s) => {
+                              const isCurrent = o.orderStatus === s
+                              const isFuture = STATUSES.indexOf(s) > STATUSES.indexOf(o.orderStatus)
+                              const isPast = STATUSES.indexOf(s) < STATUSES.indexOf(o.orderStatus)
+                              return (
+                                <button key={s}
+                                  onClick={() => !isCurrent && handleStatus(o.id, s)}
+                                  disabled={isCurrent}
+                                  className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                                    isCurrent
+                                      ? 'bg-brand-gradient text-white shadow-card cursor-default'
+                                      : isPast
+                                        ? 'bg-success-soft text-success/60 line-through cursor-default'
+                                        : 'border border-lilac-soft bg-white text-ink-muted hover:border-pink hover:text-pink hover:bg-pink-50 cursor-pointer'
+                                  }`}>
+                                  {STATUS_CONFIG[s]?.label || s}
+                                </button>
+                              )
+                            })}
+                            <button
+                              onClick={() => handleStatus(o.id, 'cancelled')}
+                              className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Delete */}
+                        <div className="flex justify-end">
                           <button
                             onClick={() => {
                               if (window.confirm(`Delete order #${o.orderNumber}? This cannot be undone.`)) {
@@ -270,7 +296,7 @@ export default function AdminOrders() {
                                 }).catch(err => showToast(err.message || 'Failed', 'error'))
                               }
                             }}
-                            className="ml-auto flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
                           >
                             🗑 Delete
                           </button>

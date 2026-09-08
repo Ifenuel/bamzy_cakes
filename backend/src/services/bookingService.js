@@ -7,6 +7,22 @@ export async function createBooking({ customer_id, full_name, phone, email, even
     RETURNING id, full_name as "fullName", event_type as "eventType",
               event_date as "eventDate", status, created_at as "createdAt"
   `, [customer_id || null, full_name, phone, email, event_type, event_date, event_location, guest_count, JSON.stringify(services_requested || []), notes])
+  // Create admin notification
+  try {
+    await pool.query(
+      `INSERT INTO admin_notifications (type, title, message, detail, reference_id, reference_type)
+       VALUES ('booking', $1, $2, $3, $4, 'booking')`,
+      [
+        `New ${event_type?.replace(/_/g, ' ') || 'event'} booking`,
+        `${full_name || 'Customer'} booked an event for ${event_date ? new Date(event_date).toLocaleDateString('en-NG') : 'TBD'}`,
+        `Event: ${event_type?.replace(/_/g, ' ') || 'event'}. Guests: ${guest_count || 'TBD'}. Status: pending.`,
+        String(result.rows[0].id),
+      ]
+    )
+  } catch (e) {
+    console.error('[NOTIFICATION] Failed to create admin notification for booking:', e.message)
+  }
+
   return result.rows[0]
 }
 
