@@ -18,7 +18,7 @@ router.get('/wishlist', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT w.id, w.created_at, w.product_id,
-              p.name, p.price, p.image_url, p.status, p.stock, c.name as "categoryName"
+              p.name, p.price, p.image_url, p.status, p.stock, c.label as "categoryName"
        FROM wishlists w
        JOIN products p ON w.product_id = p.id
        LEFT JOIN product_categories c ON p.category_id = c.id
@@ -28,6 +28,7 @@ router.get('/wishlist', requireAuth, async (req, res) => {
     )
     return success(res, result.rows)
   } catch (err) {
+    console.error('Wishlist get error:', err.message)
     console.error('Wishlist get error:', err.message)
     return error(res, 'Failed to load wishlist', 500)
   }

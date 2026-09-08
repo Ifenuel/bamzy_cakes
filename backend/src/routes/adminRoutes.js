@@ -195,7 +195,7 @@ router.get('/wishlists', requireAdmin, async (req, res) => {
               w.product_id as "productId",
               p.name as "productName", p.price as "productPrice",
               p.image_url as "productImage",
-              COALESCE(c.name, p.category) as "productCategory",
+              COALESCE(c.label, p.category) as "productCategory",
               u.id as "customerId", u.full_name as "customerName",
               u.email as "customerEmail", u.phone as "customerPhone"
        FROM wishlists w
