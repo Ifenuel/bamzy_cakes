@@ -142,22 +142,20 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* ── Backdrop ── */}
-      <div
-        onClick={() => setIsMenuOpen(false)}
-        className="fixed inset-0 z-50 bg-black/40 transition-opacity duration-300"
-        style={{
-          opacity: isMenuOpen ? 1 : 0,
-          pointerEvents: isMenuOpen ? 'auto' : 'none',
-        }}
-      />
+      {/* ── Backdrop (only interactive when menu is open) ── */}
+      {isMenuOpen && (
+        <div
+          onClick={() => setIsMenuOpen(false)}
+          className="fixed inset-0 z-50 bg-black/40 transition-opacity duration-300"
+        />
+      )}
 
       {/* ── Sidebar ── */}
       <aside
         ref={sidebarRef}
         className="fixed right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col shadow-2xl transition-transform duration-300 ease-in-out"
-        style={{ backgroundColor: 'var(--c-bg-card)' }}
         style={{
+          backgroundColor: 'var(--c-bg-card)',
           transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)',
         }}
       >
