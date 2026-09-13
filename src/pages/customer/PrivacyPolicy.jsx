@@ -1,6 +1,8 @@
 import { Shield } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
+import SEO from '../../components/common/SEO.jsx'
 
 const SECTIONS = [
   {
@@ -79,6 +81,7 @@ Order and transaction records are retained for legal and accounting purposes. If
 export default function PrivacyPolicy() {
   return (
     <>
+      <SEO title="Privacy Policy" description="How Bamzy Cakes & Confectionery collects, uses and protects your personal information." />
       <Section background="gradient" className="pt-10 pb-8 sm:pt-14 sm:pb-10">
         <PageContainer>
           <div className="flex items-center gap-3">
@@ -125,6 +128,21 @@ export default function PrivacyPolicy() {
                 <li><strong>Phone:</strong> +234 703 337 4470</li>
                 <li><strong>WhatsApp:</strong> +234 703 337 4470</li>
               </ul>
+            </div>
+
+            <div className="mt-10 flex flex-col sm:flex-row gap-3">
+              <Link
+                to="/terms"
+                className="inline-flex items-center justify-center rounded-full bg-lilac-deep px-6 py-3 text-sm font-semibold text-white transition hover:bg-lilac"
+              >
+                Read our Terms & Conditions
+              </Link>
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center rounded-full border border-lilac-soft bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-lilac"
+              >
+                Back to Home
+              </Link>
             </div>
           </div>
         </PageContainer>

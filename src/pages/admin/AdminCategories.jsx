@@ -3,6 +3,18 @@ import { Plus, Edit2, Trash2, X, Tags, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiGetCategories, apiCreateCategory, apiUpdateCategory, apiDeleteCategory, apiGetProducts } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js'
+
+/** Scroll-safe modal backdrop: locks the page behind (iOS-safe) so only the modal scrolls. */
+function ModalBackdrop({ children, onClose }) {
+  useBodyScrollLock(true)
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={onClose}>
+      {children}
+    </motion.div>
+  )
+}
 
 export default function AdminCategories() {
   const { showToast } = useToast()
@@ -178,10 +190,9 @@ export default function AdminCategories() {
       {/* Add/Edit Category Modal */}
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={closeForm}>
+          <ModalBackdrop onClose={closeForm}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+              onClick={(e) => e.stopPropagation()} className="my-auto max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-xl">
               <div className="flex items-center justify-between border-b border-lilac-soft px-6 py-4">
                 <h2 className="font-heading text-lg font-semibold">{editing ? 'Edit Category' : 'Add New Category'}</h2>
                 <button onClick={closeForm} className="rounded-full p-1.5 transition-colors hover:bg-lilac-soft"><X size={20} /></button>
@@ -206,7 +217,7 @@ export default function AdminCategories() {
                 </button>
               </form>
             </motion.div>
-          </motion.div>
+          </ModalBackdrop>
         )}
       </AnimatePresence>
     </div>

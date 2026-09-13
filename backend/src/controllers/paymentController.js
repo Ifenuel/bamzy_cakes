@@ -23,6 +23,8 @@ export async function verifyPayment(req, res) {
 export async function handleWebhook(req, res) {
   try {
     const signature = req.headers['x-paystack-signature']
+    // req.body is the RAW Buffer here (express.raw on this route) — signature
+    // verification must hash the exact bytes Paystack signed.
     await paymentService.handleWebhook(req.body, signature)
     return res.status(200).json({ received: true })
   } catch (err) {

@@ -1,8 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js'
 
 export default function Modal({ isOpen, onClose, title, children }) {
+  // Lock the background page while open (iOS-safe) so touch scrolling only
+  // scrolls the modal content — never the page behind it.
+  useBodyScrollLock(isOpen)
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === 'Escape') onClose?.()
@@ -23,7 +28,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
           role="presentation"
         >
           <motion.div
-            className="w-full max-w-md rounded-xl3 bg-white p-6 shadow-card"
+            className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-xl3 bg-white p-6 shadow-card"
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}

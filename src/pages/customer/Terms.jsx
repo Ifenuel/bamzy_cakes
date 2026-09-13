@@ -1,5 +1,7 @@
 import Section from '../../components/layout/Section.jsx'
 import PageContainer from '../../components/layout/PageContainer.jsx'
+import SEO from '../../components/common/SEO.jsx'
+import { Link } from 'react-router-dom'
 
 const sections = [
   {
@@ -74,6 +76,8 @@ const sections = [
 
 export default function Terms() {
   return (
+    <>
+    <SEO title="Terms & Conditions" description="Terms and Conditions for using the Bamzy Cakes & Confectionery website and services." />
     <Section>
       <PageContainer>
         <div className="mx-auto max-w-3xl py-12 md:py-20">
@@ -101,8 +105,24 @@ export default function Terms() {
               Bamzy — we look forward to serving you.
             </p>
           </div>
+
+          <div className="mt-10 flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/privacy-policy"
+              className="inline-flex items-center justify-center rounded-full bg-lilac-deep px-6 py-3 text-sm font-semibold text-white transition hover:bg-lilac"
+            >
+              Read our Privacy Policy
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-full border border-lilac-soft bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-lilac"
+            >
+              Back to Home
+            </Link>
+          </div>
         </div>
       </PageContainer>
     </Section>
+    </>
   )
 }

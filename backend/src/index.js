@@ -95,6 +95,12 @@ const paymentLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
+// Paystack webhook needs the RAW request body for correct HMAC-SHA512
+// signature verification (JSON.stringify of a parsed body can differ in
+// whitespace/key order and would break the hash). Keep a copy of the raw
+// bytes on the request before the JSON parser runs.
+app.use('/api/payments/webhook', express.raw({ type: '*/*', limit: '1mb' }))
+
 // Static files for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 

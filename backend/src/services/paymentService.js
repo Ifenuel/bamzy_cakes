@@ -14,7 +14,38 @@ async function findExistingPendingPayment(orderId) {
 }
 
 // Initialize a Paystack transaction with idempotency
+// SECURITY: when order_id is present, the amount is ALWAYS recalculated from
+// the orders table server-side. The amount in the request body is ignored —
+// a malicious client must never be able to set its own price.
 export async function initializePayment({ email, amount, order_id, training_registration_id, metadata = {} }) {
+  if (order_id) {
+    // Server-side amount: read the stored order total, never trust the client
+    const orderRes = await pool.query('SELECT total, payment_status FROM orders WHERE id = $1', [order_id])
+    if (orderRes.rows.length === 0) {
+      throw new Error('Order not found')
+    }
+    const order = orderRes.rows[0]
+    if (order.payment_status === 'successful') {
+      throw new Error('This order has already been paid')
+    }
+    amount = parseFloat(order.total)
+  } else if (training_registration_id) {
+    const regRes = await pool.query(
+      'SELECT t.price FROM training_registrations r JOIN trainings t ON t.id = r.training_id WHERE r.id = $1',
+      [training_registration_id]
+    )
+    if (regRes.rows.length === 0 || !(regRes.rows[0].price > 0)) {
+      throw new Error('Training registration not found')
+    }
+    amount = parseFloat(regRes.rows[0].price)
+  } else {
+    throw new Error('Payment requires an order or training registration')
+  }
+
+  if (!(amount > 0)) {
+    throw new Error('Invalid payment amount')
+  }
+
   // Check for existing pending payment (idempotency)
   if (order_id) {
     const existing = await findExistingPendingPayment(order_id)
@@ -102,6 +133,26 @@ export async function verifyPayment(reference) {
     }
   }
 
+  // SECURITY: confirm the amount Paystack actually charged matches what we
+  // expected for this reference BEFORE trusting the payment. A mismatch means
+  // a manipulated/underpaid charge — flag it, never mark the order paid.
+  const expectedPayRes = await pool.query(
+    'SELECT amount, order_id, training_registration_id FROM payments WHERE reference = $1',
+    [reference]
+  )
+  const expectedPay = expectedPayRes.rows[0]
+  if (expectedPay && paymentStatus === 'successful') {
+    const paidNaira = tx.amount / 100
+    const expectedNaira = parseFloat(expectedPay.amount)
+    if (Math.abs(paidNaira - expectedNaira) > 0.01) {
+      await pool.query(`
+        UPDATE payments SET status = 'flagged', provider_response = $2, updated_at = NOW()
+        WHERE reference = $1
+      `, [reference, JSON.stringify({ ...tx, flag_reason: `Amount mismatch: expected ${expectedNaira}, paid ${paidNaira}` })])
+      throw new Error('Payment amount mismatch — flagged for review')
+    }
+  }
+
   // Update payment record
   await pool.query(`
     UPDATE payments SET status = $2, provider_response = $3, updated_at = NOW()
@@ -159,15 +210,39 @@ export async function verifyPayment(reference) {
 }
 
 // Handle Paystack webhook (with signature verification)
-export async function handleWebhook(payload, signature) {
-  // Verify webhook signature
+// Paystack signs the RAW request body with HMAC-SHA512 and sends it in the
+// x-paystack-signature header as a HEX string. We must hash the exact raw
+// bytes the request carried — re-serializing parsed JSON can change whitespace
+// and key order, producing a different hash (this is why webhooks previously
+// failed validation). A base64 fallback keeps older deployments working.
+export async function handleWebhook(rawBody, signature) {
   const crypto = await import('crypto')
-  const hash = crypto.createHmac('sha512', PAYSTACK_SECRET).update(JSON.stringify(payload)).digest('base64')
 
-  if (hash !== signature) {
+  if (!signature) {
+    throw new Error('Missing webhook signature')
+  }
+
+  const raw = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(JSON.stringify(rawBody))
+
+  const base = crypto.createHmac('sha512', PAYSTACK_SECRET)
+  base.update(raw)
+  const sigHex = base.digest('hex')
+  const sigB64 = crypto.createHmac('sha512', PAYSTACK_SECRET).update(raw).digest('base64')
+
+  // Timing-safe comparison (constant-time) to avoid signature-oracle leaks
+  const a = Buffer.from(sigHex)
+  const b = Buffer.from(String(signature))
+  const c = Buffer.from(sigB64)
+  const matches =
+    (a.length === b.length && crypto.timingSafeEqual(a, b)) ||
+    (c.length === b.length && crypto.timingSafeEqual(c, b))
+
+  if (!matches) {
     throw new Error('Invalid webhook signature')
   }
 
+  // Parse AFTER verifying (never act on unverified payloads)
+  const payload = JSON.parse(raw.toString('utf8'))
   const { event, data } = payload
 
   if (event === 'charge.success') {
