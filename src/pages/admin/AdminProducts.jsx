@@ -5,28 +5,9 @@ import { apiGetProducts, apiCreateProduct, apiUpdateProduct, apiDeleteProduct, a
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl } from '../../utils/api.js'
-import useBodyScrollLock from '../../hooks/useBodyScrollLock.js'
+import ModalSheet from '../../components/ui/ModalSheet.jsx'
 
 const EMPTY = { name: '', slug: '', description: '', price: '', category_id: '', stock: '', available_today: true, status: 'active', image_url: '' }
-
-/**
- * Full-screen modal backdrop for the product editor.
- *
- * Mobile scroll fix (root cause): the overlay itself must NOT scroll, and the
- * PAGE behind it must be scroll-locked (iOS-safe body lock). The modal card is
- * the ONE scroll context (overflow-y-auto + overscroll-contain so scrolling
- * never chains to the background). dvh — not vh — so iOS Safari's collapsing
- * URL bar can't push the header/Save button out of reach.
- */
-function ModalBackdrop({ children, onClose }) {
-  useBodyScrollLock(true)
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-4 sm:py-8" onClick={onClose}>
-      {children}
-    </motion.div>
-  )
-}
 
 export default function AdminProducts() {
   const { showToast } = useToast()
@@ -264,7 +245,7 @@ export default function AdminProducts() {
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={() => setDeleteConfirm(null)}>
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 px-4" onClick={() => setDeleteConfirm(null)}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
               <div className="text-center">
@@ -284,17 +265,8 @@ export default function AdminProducts() {
       {/* Add/Edit Product Modal */}
       <AnimatePresence>
         {showForm && (
-          <ModalBackdrop onClose={closeForm}>
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="my-auto w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[85dvh] overflow-y-auto overscroll-contain">
-              {/* Modal Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-lilac-soft bg-white px-6 py-4 rounded-t-2xl">
-                <h2 className="font-heading text-lg font-semibold">{editing ? 'Edit Product' : 'Add New Product'}</h2>
-                <button onClick={closeForm} className="rounded-full p-1.5 transition-colors hover:bg-lilac-soft"><X size={20} /></button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <ModalSheet isOpen={showForm} onClose={closeForm} title={editing ? 'Edit Product' : 'Add New Product'}>
+              <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Image Upload */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-ink">Product Image</label>
@@ -424,14 +396,15 @@ export default function AdminProducts() {
                   <span className="text-sm font-medium text-ink">Available Today</span>
                 </label>
 
-                {/* Submit */}
-                <button type="submit"
-                  className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow">
-                  {editing ? 'Save Changes' : 'Create Product'}
-                </button>
+                {/* Submit — sticky at the bottom of the scroll area so it stays reachable on small screens */}
+                <div className="sticky bottom-0 -mx-6 -mb-5 border-t border-lilac-soft bg-white px-6 pt-4 pb-5">
+                  <button type="submit"
+                    className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow">
+                    {editing ? 'Save Changes' : 'Create Product'}
+                  </button>
+                </div>
               </form>
-            </motion.div>
-          </ModalBackdrop>
+          </ModalSheet>
         )}
       </AnimatePresence>
     </div>

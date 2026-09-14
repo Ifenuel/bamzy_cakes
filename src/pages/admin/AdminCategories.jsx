@@ -1,20 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, X, Tags, AlertCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Tags, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiGetCategories, apiCreateCategory, apiUpdateCategory, apiDeleteCategory, apiGetProducts } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
-import useBodyScrollLock from '../../hooks/useBodyScrollLock.js'
-
-/** Scroll-safe modal backdrop: locks the page behind (iOS-safe) so only the modal scrolls. */
-function ModalBackdrop({ children, onClose }) {
-  useBodyScrollLock(true)
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={onClose}>
-      {children}
-    </motion.div>
-  )
-}
+import ModalSheet from '../../components/ui/ModalSheet.jsx'
 
 export default function AdminCategories() {
   const { showToast } = useToast()
@@ -160,7 +149,7 @@ export default function AdminCategories() {
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={() => setDeleteConfirm(null)}>
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 px-4" onClick={() => setDeleteConfirm(null)}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
               <div className="text-center">
@@ -190,14 +179,8 @@ export default function AdminCategories() {
       {/* Add/Edit Category Modal */}
       <AnimatePresence>
         {showForm && (
-          <ModalBackdrop onClose={closeForm}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()} className="my-auto max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b border-lilac-soft px-6 py-4">
-                <h2 className="font-heading text-lg font-semibold">{editing ? 'Edit Category' : 'Add New Category'}</h2>
-                <button onClick={closeForm} className="rounded-full p-1.5 transition-colors hover:bg-lilac-soft"><X size={20} /></button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <ModalSheet isOpen={showForm} onClose={closeForm} title={editing ? 'Edit Category' : 'Add New Category'} maxWidth="max-w-md">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-ink">Category Name *</label>
                   <input name="label" value={form.label} onChange={handleChange} placeholder="e.g. Tiger Nuts"
@@ -211,13 +194,14 @@ export default function AdminCategories() {
                     <p className="mt-1 text-xs text-ink-muted">Auto-generated from the category name.</p>
                   </div>
                 )}
-                <button type="submit"
-                  className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow">
-                  {editing ? 'Save Changes' : 'Create Category'}
-                </button>
+                <div className="sticky bottom-0 -mx-6 -mb-5 border-t border-lilac-soft bg-white px-6 pt-4 pb-5">
+                  <button type="submit"
+                    className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card transition-all hover:shadow-glow">
+                    {editing ? 'Save Changes' : 'Create Category'}
+                  </button>
+                </div>
               </form>
-            </motion.div>
-          </ModalBackdrop>
+          </ModalSheet>
         )}
       </AnimatePresence>
     </div>

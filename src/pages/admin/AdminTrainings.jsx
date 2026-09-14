@@ -1,20 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Edit2, Trash2, X, Upload, Image } from 'lucide-react'
+import { Plus, Edit2, Trash2, Upload, Image } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiGetTrainings, apiCreateTraining, apiUpdateTraining, apiDeleteTraining, apiUploadImage, getImgUrl } from '../../utils/api.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 import { formatNaira } from '../../utils/format.js'
-import useBodyScrollLock from '../../hooks/useBodyScrollLock.js'
-
-/** Scroll-safe modal backdrop: locks the page behind (iOS-safe) so only the modal scrolls. */
-function ModalBackdrop({ children, onClose }) {
-  useBodyScrollLock(true)
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={onClose}>
-      {children}
-    </div>
-  )
-}
+import ModalSheet from '../../components/ui/ModalSheet.jsx'
 
 const EMPTY = { title: '', slug: '', description: '', price: '', date: '', start_time: '', end_time: '', location: '', capacity: '', what_you_will_learn: '', requirements: '', image_url: '' }
 
@@ -96,10 +86,8 @@ export default function AdminTrainings() {
         <button onClick={openCreate} className="flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-card hover:shadow-glow"><Plus size={16} /> Add Training</button>
       </div>
       {showForm && (
-        <ModalBackdrop onClose={() => setShowForm(false)}>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} onClick={(e) => e.stopPropagation()} className="my-auto max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-xl3 bg-white p-6 shadow-card">
-            <div className="flex items-center justify-between"><h2 className="font-heading text-lg font-semibold">{editing ? 'Edit' : 'Add'} Training</h2><button onClick={() => setShowForm(false)} className="rounded-full p-1 hover:bg-lilac-soft"><X size={20} /></button></div>
-            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+        <ModalSheet isOpen={showForm} onClose={() => setShowForm(false)} title={editing ? 'Edit Training' : 'Add Training'} maxWidth="max-w-md">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div><label className="mb-1 block text-xs font-medium text-ink">Title</label><input name="title" value={form.title} onChange={handleChange} required className="w-full rounded-xl border border-lilac-soft px-3 py-2 text-sm focus:border-lilac focus:outline-none" /></div>
               <div><label className="mb-1 block text-xs font-medium text-ink">Description</label><textarea name="description" value={form.description} onChange={handleChange} rows={2} className="w-full resize-none rounded-xl border border-lilac-soft px-3 py-2 text-sm focus:border-lilac focus:outline-none" /></div>
               <div className="grid grid-cols-2 gap-3">
@@ -125,10 +113,11 @@ export default function AdminTrainings() {
                 </button>
                 {form.image_url && (<img src={getImgUrl(form.image_url)} alt="Preview" className="mt-2 h-24 w-full rounded-lg object-cover" />)}
               </div>
-              <button type="submit" className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card hover:shadow-glow">{editing ? 'Save Changes' : 'Create Training'}</button>
+              <div className="sticky bottom-0 -mx-6 -mb-5 border-t border-lilac-soft bg-white px-6 pt-4 pb-5">
+                <button type="submit" className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-card hover:shadow-glow">{editing ? 'Save Changes' : 'Create Training'}</button>
+              </div>
             </form>
-          </motion.div>
-        </ModalBackdrop>
+        </ModalSheet>
       )}
       <div className="mt-4 space-y-3">
         {trainings.map((t) => (
@@ -151,7 +140,7 @@ export default function AdminTrainings() {
         {deleteConfirm && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 px-4"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
