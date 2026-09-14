@@ -121,8 +121,10 @@ export default function AdminDashboard() {
     )
   }
 
-  const totalRevenue = stats?.todayRevenue || 0
-  const totalOrders = stats?.todayOrders || 0
+  // "Total Revenue" = ALL-TIME successful payments (not just today) — matches
+  // the Orders page total. todayRevenue stays available for the chart/label.
+  const totalRevenue = stats?.totalRevenue ?? stats?.todayRevenue ?? 0
+  const totalOrders = stats?.totalOrders ?? stats?.todayOrders ?? 0
   const customers = stats?.customerCount || 0
   const eventBookings = stats?.upcomingBookings?.length || 0
   const trainingRegs = stats?.upcomingTrainings?.length || 0
@@ -131,7 +133,7 @@ export default function AdminDashboard() {
   /* ── KPI cards ──────────────────────────────────────────── */
   const kpis = [
     { label: 'Total Revenue', value: formatNaira(totalRevenue), icon: DollarSign, color: 'bg-pink-soft text-pink' },
-    { label: 'Orders Today', value: totalOrders, icon: ClipboardList, color: 'bg-lilac-soft text-lilac-deep' },
+    { label: 'Total Orders', value: totalOrders, icon: ClipboardList, color: 'bg-lilac-soft text-lilac-deep' },
     { label: 'Total Customers', value: customers, icon: Users, color: 'bg-pink-soft text-pink' },
     { label: 'Event Bookings', value: eventBookings, icon: CalendarCheck, color: 'bg-lilac-soft text-lilac-deep' },
     { label: 'Trainings', value: trainingRegs, icon: GraduationCap, color: 'bg-pink-soft text-pink' },

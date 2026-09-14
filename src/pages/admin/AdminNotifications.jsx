@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Bell, Check, CheckCheck } from 'lucide-react'
+import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { apiClearAllAdminNotifications, apiDeleteAdminNotification } from '../../utils/api.js'
 
 const NOTIF_ICONS = {
   order: '📦',
@@ -187,15 +188,35 @@ export default function AdminNotifications() {
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : 'All caught up!'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllRead}
-            className="flex items-center gap-2 rounded-full border border-lilac-soft bg-white px-4 py-2 text-sm font-medium text-ink-muted hover:bg-lilac-soft/50 transition-colors"
-          >
-            <CheckCheck size={14} />
-            Mark all as read
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-2 rounded-full border border-lilac-soft bg-white px-4 py-2 text-sm font-medium text-ink-muted hover:bg-lilac-soft/50 transition-colors"
+            >
+              <CheckCheck size={14} />
+              Mark all as read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!window.confirm('Clear ALL notifications? This permanently deletes them from the database to free up space.')) return
+                try {
+                  await apiClearAllAdminNotifications()
+                  setNotifications([])
+                  localStorage.removeItem('bamzy_admin_notifs_read_at')
+                } catch (err) {
+                  console.error('Failed to clear notifications:', err)
+                }
+              }}
+              className="flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={14} />
+              Clear all
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -295,6 +316,17 @@ export default function AdminNotifications() {
                           <p className="mt-2 text-xs text-ink-muted">
                             {new Date(notif.time).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
                           </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (!window.confirm('Delete this notification?')) return
+                              apiDeleteAdminNotification(notif.dbId || notif.id).catch(() => {})
+                              setNotifications(prev => prev.filter(x => x.id !== notif.id))
+                            }}
+                            className="mt-3 inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
                         </motion.div>
                       )}
                     </div>

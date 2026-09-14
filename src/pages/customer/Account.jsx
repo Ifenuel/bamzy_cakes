@@ -10,7 +10,7 @@ import PageContainer from '../../components/layout/PageContainer.jsx'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useCart } from '../../context/CartContext.jsx'
-import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, apiDeleteAccount, apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, apiGetWishlist, apiRemoveFromWishlist, getImgUrl } from '../../utils/api.js'
+import { apiGetAccount, apiUploadAvatar, apiUpdateProfile, apiDeleteAccount, apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, apiClearAllNotifications, apiDeleteNotification, apiGetWishlist, apiRemoveFromWishlist, getImgUrl } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { useToast } from '../../components/ui/Toast.jsx'
 
@@ -510,6 +510,39 @@ function OrderCard({ order: o, fd, compact }) {
 /* ═══════════════════════════════════════════════════════
    BOOKINGS TAB
    ═══════════════════════════════════════════════════════ */
+function BookingStatusTracker({ status }) {
+  const steps = ['pending', 'confirmed', 'in_progress', 'completed']
+  const cancelled = status === 'cancelled'
+  const currentIdx = steps.indexOf(status)
+  const labels = { pending: 'Received', confirmed: 'Confirmed', in_progress: 'In Progress', completed: 'Completed' }
+  return (
+    <div className="mt-4">
+      {cancelled ? (
+        <p className="text-xs font-semibold text-red-500">This booking was cancelled.</p>
+      ) : (
+        <div className="flex items-center">
+          {steps.map((s, i) => {
+            const done = currentIdx >= i && currentIdx !== -1
+            return (
+              <div key={s} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center">
+                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${done ? 'bg-pink text-white' : 'bg-lilac-soft text-ink-muted'}`}>
+                    {done ? '✓' : i + 1}
+                  </div>
+                  <span className={`mt-1 text-[9px] font-medium whitespace-nowrap ${done ? 'text-pink' : 'text-ink-muted/60'}`}>{labels[s]}</span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={`mx-1 mb-4 h-0.5 flex-1 ${currentIdx > i ? 'bg-pink' : 'bg-lilac-soft'}`} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function BookingsTab({ bookings, fd }) {
   return (
     <div>
@@ -529,7 +562,7 @@ function BookingsTab({ bookings, fd }) {
                 <div>
                   <p className="text-sm font-bold text-ink capitalize">{(b.eventType || '').replace(/_/g, ' ')}</p>
                   <p className="text-xs text-ink-muted">{fd(b.eventDate)} · {b.eventLocation}</p>
-                  <p className="text-xs text-ink-muted mt-1">{b.guestCount} guests · {b.fullName}</p>
+                  <p className="text-xs text-ink-muted mt-1">{b.guestCount} guests · Booked {fd(b.createdAt)}</p>
                 </div>
                 <StatusBadge status={b.status} />
               </div>
@@ -537,11 +570,13 @@ function BookingsTab({ bookings, fd }) {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(Array.isArray(b.servicesRequested) ? b.servicesRequested : [b.servicesRequested]).map((s, i) => (
                     <span key={i} className="rounded-full bg-lilac-soft/60 px-3 py-1 text-xs font-medium text-lilac-deep capitalize">
-                      {s.replace(/_/g, ' ')}
+                      {String(s).replace(/_/g, ' ')}
                     </span>
                   ))}
                 </div>
               )}
+              {/* Track progress — completed bookings stay here as history */}
+              <BookingStatusTracker status={b.status} />
             </motion.div>
           ))}
         </div>
@@ -571,13 +606,19 @@ function TrainingsTab({ trainings, fd }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-ink">{t.trainingTitle}</p>
-                  <p className="text-xs text-ink-muted">{t.numberOfStudents} student(s) · Registered {fd(t.createdAt)}</p>
+                  <p className="text-xs text-ink-muted">
+                    {t.numberOfStudents} student(s) · Registered {fd(t.createdAt)}
+                    {t.trainingDate ? ` · Training ${fd(t.trainingDate)}` : ''}
+                  </p>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-bold text-pink">{formatNaira(t.amount)}</span>
-                  <StatusBadge status={t.registrationStatus} />
+                  <div className="mt-1"><StatusBadge status={t.registrationStatus} /></div>
                 </div>
               </div>
+              {t.paymentStatus && (
+                <p className="mt-2 text-xs text-ink-muted">Payment: <span className={t.paymentStatus === 'successful' || t.paymentStatus === 'paid' ? 'font-semibold text-green-600' : 'font-semibold text-amber-600'}>{t.paymentStatus}</span></p>
+              )}
             </motion.div>
           ))}
         </div>
@@ -841,11 +882,27 @@ function NotificationsTab() {
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : 'All caught up!'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <button onClick={handleMarkAllRead} className="flex items-center gap-1.5 rounded-full border border-lilac-soft bg-white px-4 py-2 text-xs font-medium text-ink-muted hover:bg-lilac-soft/50 transition-colors">
-            ✓ Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <button onClick={handleMarkAllRead} className="flex items-center gap-1.5 rounded-full border border-lilac-soft bg-white px-4 py-2 text-xs font-medium text-ink-muted hover:bg-lilac-soft/50 transition-colors">
+              ✓ Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!window.confirm('Clear ALL notifications? This permanently deletes them to free up space.')) return
+                try {
+                  await apiClearAllNotifications()
+                  setNotifications([])
+                } catch {}
+              }}
+              className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+            >
+              🗑 Clear all
+            </button>
+          )}
+        </div>
       </div>
       {notifications.length === 0 ? (
         <EmptyState emoji="🔔" text="No notifications yet." subtext="You will be notified when your orders are updated." />
@@ -888,6 +945,17 @@ function NotificationsTab() {
                         <p className="mt-2 text-xs text-ink-muted">
                           {new Date(n.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
                         </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!window.confirm('Delete this notification?')) return
+                            apiDeleteNotification(n.id).catch(() => {})
+                            setNotifications(prev => prev.filter(x => x.id !== n.id))
+                          }}
+                          className="mt-3 inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          🗑 Delete
+                        </button>
                       </motion.div>
                     )}
                   </div>

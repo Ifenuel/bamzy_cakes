@@ -14,14 +14,17 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx'
 import ProductCard from '../../components/shop/ProductCard.jsx'
 import { apiGetProductById, apiGetProducts } from '../../utils/api.js'
 import { useCart } from '../../context/CartContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../components/ui/Toast.jsx'
+import { Heart } from 'lucide-react'
 import { formatNaira } from '../../utils/format.js'
-import { getImgUrl, apiTrackEvent, apiGetProductImages } from '../../utils/api.js'
+import { getImgUrl, apiTrackEvent, apiGetProductImages, apiCheckWishlist, apiAddToWishlist, apiRemoveFromWishlist } from '../../utils/api.js'
 
 export default function ProductDetails() {
   const { productId } = useParams()
   const navigate = useNavigate()
   const { items, addItem } = useCart()
+  const { isAuthenticated } = useAuth()
   const { showToast } = useToast()
   const [product, setProduct] = useState(null)
   const [allProducts, setAllProducts] = useState([])
@@ -30,6 +33,30 @@ export default function ProductDetails() {
   const [justAdded, setJustAdded] = useState(false)
   const [extraImages, setExtraImages] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && productId) {
+      apiCheckWishlist(productId).then(d => setIsWishlisted(d.isWishlisted)).catch(() => {})
+    }
+  }, [isAuthenticated, productId])
+
+  async function toggleWishlist() {
+    if (!isAuthenticated) { showToast('Sign in to save favourites', 'error'); return }
+    try {
+      if (isWishlisted) {
+        await apiRemoveFromWishlist(productId)
+        setIsWishlisted(false)
+        showToast('Removed from wishlist', 'success')
+      } else {
+        await apiAddToWishlist(productId)
+        setIsWishlisted(true)
+        showToast('Added to wishlist', 'success')
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed', 'error')
+    }
+  }
 
   useEffect(() => {
     let ok = true
@@ -186,6 +213,12 @@ export default function ProductDetails() {
                   {quantity >= maxQuantity && <span className="text-xs text-ink-muted">Max {maxQuantity}</span>}
                 </div>
               )}
+
+              <button type="button" onClick={toggleWishlist}
+                className="flex w-fit items-center gap-2 rounded-full border border-lilac-soft px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-pink hover:text-pink">
+                <Heart size={16} className={isWishlisted ? 'fill-pink text-pink' : ''} />
+                {isWishlisted ? 'Saved to Favourites' : 'Save to Favourites'}
+              </button>
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                 <motion.button onClick={handleAddToCart} disabled={isSoldOut} whileTap={{ scale: 0.96 }}

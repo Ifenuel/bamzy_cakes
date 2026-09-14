@@ -44,6 +44,31 @@ router.put('/notifications/read-all', requireAdmin, async (req, res) => {
   }
 })
 
+// Admin: Clear ALL notifications (frees DB space)
+router.delete('/notifications', requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('DELETE FROM admin_notifications')
+    await pool.query('DELETE FROM admin_notification_reads').catch(() => {})
+    return success(res, { message: 'All notifications cleared', deleted: r.rowCount })
+  } catch (err) {
+    console.error('Clear notifications error:', err.message)
+    return error(res, 'Failed to clear notifications', 500)
+  }
+})
+
+// Admin: Delete a single notification
+router.delete('/notifications/:id', requireAdmin, async (req, res) => {
+  try {
+    const numId = parseInt(req.params.id)
+    if (isNaN(numId)) return error(res, 'Invalid notification id', 400)
+    await pool.query('DELETE FROM admin_notifications WHERE id = $1', [numId])
+    return success(res, { message: 'Notification deleted' })
+  } catch (err) {
+    console.error('Delete notification error:', err.message)
+    return error(res, 'Failed to delete notification', 500)
+  }
+})
+
 // Admin: Recent activity feed (orders, bookings, training registrations)
 router.get('/activity', requireAdmin, async (req, res) => {
   try {
@@ -137,6 +162,18 @@ router.get('/report', requireAdmin, async (req, res) => {
 })
 
 // Admin: Clean database — remove all test/fake data, keep real accounts
+// POST /admin/cleanup — remove ONLY fake/test data.
+// REAL accounts (gmail/yahoo/outlook/etc. and admin@bamzycakes.com) and ALL
+// their orders/bookings/reviews are preserved. Only content belonging to
+// fake-mail users (test.com/example.com/mailinator etc. or test/fake/example
+// in the address) is removed.
+const FAKE_EMAIL_SQL = `
+  email ~* '(test|fake|example|temp|dummy|spam)'
+  OR email ~* '@(test\.com|example\.com|example\.org|mailinator\.com|yopmail\.com|guerrillamail\.com|10minutemail\.com|tempmail\.(com|io)|throwaway\.mail|fakeinbox\.com|sharklasers\.com|trashmail\.(com|de)|getnada\.com|dispostable\.com|maildrop\.cc)$'
+  OR email ~* '\.(test|fake|invalid)$'
+`
+const REAL_DOMAIN_SQL = `email ~* '@(gmail\.com|googlemail\.com|yahoo\.(com|co\.uk|co\.in)|ymail\.com|hotmail\.(com|co\.uk)|outlook\.com|live\.com|icloud\.com|me\.com|aol\.com|protonmail\.com|proton\.me|zoho\.com|gmx\.(com|de)|mail\.com)$' OR email = 'admin@bamzycakes.com' OR email LIKE '%@bamzycakes.com'`
+
 router.post('/cleanup', requireAdmin, async (req, res) => {
   const deleted = {}
 
@@ -151,49 +188,79 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
   }
 
   try {
-    // Delete in correct dependency order (children before parents)
+    // ids of fake users (never touches real providers or @bamzycakes.com)
+    const fakeUsers = await pool.query(
+      `SELECT id FROM users WHERE role != 'admin' AND NOT (${REAL_DOMAIN_SQL}) AND (${FAKE_EMAIL_SQL})`
+    )
+    const fakeIds = fakeUsers.rows.map(r => r.id)
+    const inFake = fakeIds.length > 0
+    const ph = (start, n) => Array.from({ length: n }, (_, i) => `$${start + i}`).join(', ')
 
-    // 1. Payments (has order_id + training_registration_id, NO customer_id)
-    await safeDelete('payments_training', 'DELETE FROM payments WHERE training_registration_id IS NOT NULL')
-    await safeDelete('payments_orders', 'DELETE FROM payments WHERE order_id IS NOT NULL')
-    await safeDelete('payments_orphan', 'DELETE FROM payments')
+    // 1. Payments tied to fake-owned orders/registrations, then orphans
+    await safeDelete('payments_fake_orders', inFake
+      ? `DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE customer_id IN (${ph(1, fakeIds.length)})) OR training_registration_id IN (SELECT id FROM training_registrations WHERE customer_id IN (${ph(1 + fakeIds.length, fakeIds.length)}))`
+      : 'DELETE FROM payments WHERE false', fakeIds.concat(fakeIds))
+    await safeDelete('payments_orphan', `
+      DELETE FROM payments p WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = p.order_id)
+      AND NOT EXISTS (SELECT 1 FROM training_registrations tr WHERE tr.id = p.training_registration_id)`)
 
-    // 2. Order items (depends on orders)
-    await safeDelete('order_items', 'DELETE FROM order_items')
+    // 2. Order items for fake orders
+    await safeDelete('order_items_fake', inFake
+      ? `DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id IN (${ph(1, fakeIds.length)}))`
+      : 'DELETE FROM order_items WHERE false', fakeIds)
 
-    // 3. Orders
-    await safeDelete('orders', 'DELETE FROM orders')
+    // 3. Fake orders
+    await safeDelete('orders_fake', inFake
+      ? `DELETE FROM orders WHERE customer_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM orders WHERE false', fakeIds)
 
-    // 4. Training registrations (has customer_id)
-    await safeDelete('training_registrations', 'DELETE FROM training_registrations')
+    // 4. Fake training registrations
+    await safeDelete('training_registrations_fake', inFake
+      ? `DELETE FROM training_registrations WHERE customer_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM training_registrations WHERE false', fakeIds)
 
-    // 5. Reviews (has customer_id)
-    await safeDelete('reviews', 'DELETE FROM reviews')
+    // 5. Fake reviews (incl. anonymous fake-name reviews without an account)
+    await safeDelete('reviews_fake_users', inFake
+      ? `DELETE FROM reviews WHERE customer_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM reviews WHERE false', fakeIds)
+    await safeDelete('reviews_fake_names', `DELETE FROM reviews WHERE customer_name ~* '(test|fake|example|admin)' AND customer_id IS NULL`)
 
-    // 6. Notifications
-    await safeDelete('notifications', 'DELETE FROM notifications')
+    // 6. Notifications for fake users
+    await safeDelete('notifications_fake', inFake
+      ? `DELETE FROM notifications WHERE user_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM notifications WHERE false', fakeIds)
 
-    // 7. Wishlists (has customer_id)
-    await safeDelete('wishlists', 'DELETE FROM wishlists')
+    // 7. Fake wishlists
+    await safeDelete('wishlists_fake', inFake
+      ? `DELETE FROM wishlists WHERE customer_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM wishlists WHERE false', fakeIds)
 
-    // 8. Bookings
-    await safeDelete('event_bookings', 'DELETE FROM event_bookings')
+    // 8. Fake event bookings (guest bookings with fake emails too)
+    await safeDelete('event_bookings_fake', `
+      DELETE FROM event_bookings WHERE
+      (customer_id IS NOT NULL AND customer_id IN (SELECT id FROM users WHERE role != 'admin' AND NOT (${REAL_DOMAIN_SQL}) AND (${FAKE_EMAIL_SQL})))
+      OR (customer_id IS NULL AND email IS NOT NULL AND (${FAKE_EMAIL_SQL}))`)
 
-    // 9. Newsletter
-    await safeDelete('newsletter', 'DELETE FROM newsletter_subscribers')
+    // 9. Fake newsletter subscribers
+    await safeDelete('newsletter_fake', `DELETE FROM newsletter_subscribers WHERE (${FAKE_EMAIL_SQL.replace(/email/g, 'email')}) AND NOT (${REAL_DOMAIN_SQL.replace(/email/g, 'email')})`)
 
-    // 10. Contact messages
-    await safeDelete('contacts', 'DELETE FROM contact_messages')
+    // 10. Fake contact messages
+    await safeDelete('contacts_fake', `DELETE FROM contact_messages WHERE email IS NOT NULL AND (${FAKE_EMAIL_SQL})`)
 
-    // 11. Analytics events
-    await safeDelete('analytics', 'DELETE FROM analytics_events')
+    // 11. Fake analytics events
+    await safeDelete('analytics_fake_users', inFake
+      ? `DELETE FROM analytics_events WHERE user_id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM analytics_events WHERE false', fakeIds)
 
-    // 12. Delete only test/fake users — keep all real customers
-    await safeDelete('users', "DELETE FROM users WHERE (email LIKE '%test%' OR email LIKE '%fake%' OR email LIKE '%example%') AND role != 'admin'")
+    // 12. Delete the fake user accounts themselves (admins always kept)
+    await safeDelete('users_fake', inFake
+      ? `DELETE FROM users WHERE id IN (${ph(1, fakeIds.length)})`
+      : 'DELETE FROM users WHERE false', fakeIds)
 
     return success(res, {
-      message: 'Database cleaned! All fake data removed.',
+      message: `Cleanup complete — fake data removed. Real customers (Gmail/Yahoo/etc.) and admin@bamzycakes.com are untouched.`,
       deleted,
+      fakeAccountsRemoved: fakeIds.length,
     })
   } catch (err) {
     console.error('Cleanup error:', err.message)
@@ -209,7 +276,7 @@ router.get('/wishlists', requireAdmin, async (req, res) => {
               w.product_id as "productId",
               p.name as "productName", p.price as "productPrice",
               p.image_url as "productImage",
-              COALESCE(c.label, p.category) as "productCategory",
+              c.label as "productCategory",
               u.id as "customerId", u.full_name as "customerName",
               u.email as "customerEmail", u.phone as "customerPhone"
        FROM wishlists w

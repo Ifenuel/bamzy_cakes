@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Settings, Save, Upload, Image as ImageIcon, Plus, Trash2, Star, X } from 'lucide-react'
+import { Settings, Save, Upload, Image as ImageIcon, Plus, Trash2, Star, X, Sparkles } from 'lucide-react'
 import { useToast } from '../../components/ui/Toast.jsx'
-import { apiGetSettings, apiUpdateSettings, apiUploadImage } from '../../utils/api.js'
+import { apiGetSettings, apiUpdateSettings, apiUploadImage, apiCleanupFakeData } from '../../utils/api.js'
 import { getImgUrl } from '../../utils/api.js'
 
 export default function AdminSettings() {
@@ -546,6 +546,72 @@ export default function AdminSettings() {
           {isSaving ? 'Saving...' : 'Save All Settings'}
         </button>
       </form>
+
+      {/* ── Data Management: clean fake data ── */}
+      <DataCleanupCard />
+    </div>
+  )
+}
+
+function DataCleanupCard() {
+  const { showToast } = useToast()
+  const [cleaning, setCleaning] = useState(false)
+  const [result, setResult] = useState(null)
+
+  async function runCleanup() {
+    if (!window.confirm(
+      'Remove all fake/test data?\n\n' +
+      'KEPT: admin@bamzycakes.com, all real Gmail/Yahoo/Outlook customers and their orders, bookings, reviews and wishlists.\n\n' +
+      'REMOVED: accounts with test/fake/temp/spam emails and everything they created.'
+    )) return
+    setCleaning(true)
+    try {
+      const res = await apiCleanupFakeData()
+      setResult(res)
+      showToast(res.message || 'Cleanup complete', 'success')
+    } catch (err) {
+      showToast(err.message || 'Cleanup failed', 'error')
+    }
+    setCleaning(false)
+  }
+
+  return (
+    <div className="mt-10 rounded-2xl border border-lilac-soft bg-white p-6 shadow-xs">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lilac-soft">
+          <Sparkles size={20} className="text-lilac-deep" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-heading text-base font-bold text-ink">Clean Fake Data</h3>
+          <p className="mt-1 text-sm text-ink-muted leading-relaxed">
+            Removes test/fake accounts (test.com, temp mail, etc.) and everything they created —
+            orders, bookings, reviews, wishlists, notifications. Real customers with Gmail, Yahoo,
+            Outlook and similar providers, plus <strong>admin@bamzycakes.com</strong>, are never touched.
+          </p>
+          {result?.deleted && (
+            <div className="mt-3 rounded-xl bg-lilac-soft/40 p-3 text-xs text-ink-muted">
+              <p className="font-semibold text-ink">Last cleanup removed:</p>
+              <p className="mt-1 leading-relaxed">
+                {Object.entries(result.deleted)
+                  .filter(([, n]) => n > 0)
+                  .map(([k, n]) => `${k}: ${n}`)
+                  .join(' · ') || 'Nothing to remove — database is already clean.'}
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={runCleanup}
+            disabled={cleaning}
+            className={`mt-4 flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white shadow-card transition-all ${
+              cleaning ? 'cursor-not-allowed bg-ink/30' : 'bg-brand-gradient hover:shadow-glow'
+            }`}
+          >
+            <Trash2 size={15} />
+            {cleaning ? 'Cleaning...' : 'Clean Fake Data Now'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

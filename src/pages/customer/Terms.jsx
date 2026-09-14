@@ -1,7 +1,5 @@
-import Section from '../../components/layout/Section.jsx'
-import PageContainer from '../../components/layout/PageContainer.jsx'
 import SEO from '../../components/common/SEO.jsx'
-import { Link } from 'react-router-dom'
+import LegalLayout from '../../components/layout/LegalLayout.jsx'
 
 const sections = [
   {
@@ -18,7 +16,11 @@ const sections = [
   },
   {
     title: '4. Orders & Payment',
-    content: `When you place an order, you are making an offer to purchase a product. All orders are subject to acceptance and availability. We reserve the right to refuse or cancel any order for any reason, including product unavailability, errors in pricing, or suspected fraudulent activity. Payment is processed securely through Paystack. We do not store your card details. An order is only confirmed after successful payment verification.`
+    content: `When you place an order, you are making an offer to purchase a product. All orders are subject to acceptance and availability. We reserve the right to refuse or cancel any order for any reason, including product unavailability, errors in pricing, or suspected fraudulent activity.`,
+    points: [
+      'Payment is processed securely through Paystack — we never store your card details.',
+      'An order is only confirmed after successful payment verification.',
+    ]
   },
   {
     title: '5. Pricing',
@@ -30,15 +32,29 @@ const sections = [
   },
   {
     title: '7. Cancellations & Refunds',
-    content: `Orders may be cancelled within 1 hour of placement if they have not yet been prepared. Once an order is being prepared or has been dispatched, cancellation is no longer possible. Refunds for failed or cancelled payments are processed automatically by Paystack. For other refund requests, please contact us within 24 hours of receiving your order with a valid reason. Custom cake orders and event bookings are non-refundable once preparation has begun.`
+    content: `Orders may be cancelled within 1 hour of placement if they have not yet been prepared. Once an order is being prepared or has been dispatched, cancellation is no longer possible. Refunds for failed or cancelled payments are processed automatically by Paystack.`,
+    points: [
+      'For other refund requests, please contact us within 24 hours of receiving your order with a valid reason.',
+      'Custom cake orders and event bookings are non-refundable once preparation has begun.',
+    ]
   },
   {
     title: '8. Events & Bookings',
-    content: `Event bookings require a deposit to secure your date. The deposit amount and payment schedule will be communicated at the time of booking. Cancellations made more than 7 days before the event date may receive a partial refund of the deposit. Cancellations made within 7 days of the event are non-refundable. Event details (date, venue, guest count) can be modified up to 3 days before the event, subject to availability.`
+    content: `Event bookings require a deposit to secure your date. The deposit amount and payment schedule will be communicated at the time of booking.`,
+    points: [
+      'Cancellations made more than 7 days before the event date may receive a partial refund of the deposit.',
+      'Cancellations made within 7 days of the event are non-refundable.',
+      'Event details (date, venue, guest count) can be modified up to 3 days before the event, subject to availability.',
+    ]
   },
   {
     title: '9. Training & Workshops',
-    content: `Training registrations are confirmed upon payment. Cancellations made at least 48 hours before the training date are eligible for a full refund. Cancellations within 48 hours are non-refundable but may be transferred to a future session, subject to availability. We reserve the right to reschedule or cancel a training session due to low enrollment or unforeseen circumstances. In such cases, registered participants will be offered a full refund or transfer to the next available session.`
+    content: `Training registrations are confirmed upon payment.`,
+    points: [
+      'Cancellations made at least 48 hours before the training date are eligible for a full refund.',
+      'Cancellations within 48 hours are non-refundable but may be transferred to a future session, subject to availability.',
+      'We reserve the right to reschedule or cancel a training session due to low enrollment or unforeseen circumstances. In such cases, registered participants will be offered a full refund or transfer to the next available session.',
+    ]
   },
   {
     title: '10. Customer Accounts',
@@ -71,58 +87,23 @@ const sections = [
   {
     title: '17. Contact',
     content: `If you have any questions about these Terms and Conditions, please contact us through our Contact page or via WhatsApp. We are happy to clarify any points for you.`
-  }
+  },
 ]
 
 export default function Terms() {
   return (
     <>
-    <SEO title="Terms & Conditions" description="Terms and Conditions for using the Bamzy Cakes & Confectionery website and services." />
-    <Section>
-      <PageContainer>
-        <div className="mx-auto max-w-3xl py-12 md:py-20">
-          <p className="text-sm font-medium uppercase tracking-widest text-lilac-deep">Legal</p>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-ink md:text-4xl">
-            Terms & Conditions
-          </h1>
-          <p className="mt-3 text-ink-muted">
-            Last updated: August 2026
-          </p>
-
-          <div className="mt-10 space-y-8">
-            {sections.map((s, i) => (
-              <div key={i}>
-                <h2 className="font-heading text-lg font-bold text-ink">{s.title}</h2>
-                <p className="mt-2 leading-relaxed text-ink-muted">{s.content}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 rounded-xl border border-lilac-soft bg-lilac/5 p-6">
-            <p className="text-sm leading-relaxed text-ink-muted">
-              By using the Bamzy Cakes & Confectionery website, you acknowledge that you have read,
-              understood, and agree to be bound by these Terms and Conditions. Thank you for choosing
-              Bamzy — we look forward to serving you.
-            </p>
-          </div>
-
-          <div className="mt-10 flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/privacy-policy"
-              className="inline-flex items-center justify-center rounded-full bg-lilac-deep px-6 py-3 text-sm font-semibold text-white transition hover:bg-lilac"
-            >
-              Read our Privacy Policy
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-full border border-lilac-soft bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-lilac"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </PageContainer>
-    </Section>
+      <SEO title="Terms & Conditions" description="Terms and Conditions for using the Bamzy Cakes & Confectionery website and services." />
+      <LegalLayout
+        kind="terms"
+        title="Terms & Conditions"
+        description="The rules and expectations that keep every Bamzy order, booking and training delightful and worry-free."
+        updated="September 2026"
+        intro="These Terms form the agreement between you and Bamzy Cakes & Confectionery whenever you browse, order, book an event, or register for a training on this website. Please read them carefully — they are written to be clear, fair, and easy to follow."
+        sections={sections}
+        footerNote="By using the Bamzy Cakes & Confectionery website, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. Thank you for choosing Bamzy — we look forward to serving you."
+        crossLink={{ to: '/terms', label: 'Read our Terms & Conditions' }}
+      />
     </>
   )
 }

@@ -334,3 +334,12 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* iOS Safari < 15.4 has no dvh unit — give modal scroll containers a vh fallback
+   so max-height (and thus scrolling) still works. Modern browsers ignore this
+   because their dvh utility takes precedence in source order. */
+@supports not (height: 1dvh) {
+  .max-h-\[85dvh\] {
+    max-height: 85vh;
+  }
+}

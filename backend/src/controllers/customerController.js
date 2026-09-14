@@ -10,15 +10,21 @@ export async function getAccount(req, res) {
     const user = await authService.getMe(req.user.id)
     const orders = await orderService.getCustomerOrders(req.user.id)
 
+    // Full booking details so the customer can actually track each booking
     const bookingsRes = await pool.query(
-      `SELECT id, event_type as "eventType", event_date as "eventDate", status, created_at as "createdAt"
+      `SELECT id, event_type as "eventType", event_date as "eventDate",
+              event_location as "eventLocation", guest_count as "guestCount",
+              services_requested as "servicesRequested", status,
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM event_bookings WHERE customer_id = $1 ORDER BY created_at DESC`,
       [req.user.id]
     )
 
     const trainingRes = await pool.query(
       `SELECT tr.id, t.title as "trainingTitle", tr.number_of_students as "numberOfStudents",
-              tr.amount, tr.status as "registrationStatus", tr.created_at as "createdAt"
+              tr.amount, tr.payment_status as "paymentStatus",
+              tr.status as "registrationStatus", tr.created_at as "createdAt",
+              t.date as "trainingDate"
        FROM training_registrations tr
        JOIN trainings t ON tr.training_id = t.id
        WHERE tr.customer_id = $1
@@ -105,6 +111,26 @@ export async function markAllNotificationsRead(req, res) {
     return success(res, { message: 'All marked as read' })
   } catch (err) {
     return safeError(res, err, 'Failed to update notifications', 500)
+  }
+}
+
+// Clear ALL of this user's notifications (frees DB space)
+export async function clearAllNotifications(req, res) {
+  try {
+    const r = await pool.query('DELETE FROM notifications WHERE user_id = $1', [req.user.id])
+    return success(res, { message: 'All notifications cleared', deleted: r.rowCount })
+  } catch (err) {
+    return safeError(res, err, 'Failed to clear notifications', 500)
+  }
+}
+
+// Delete ONE of this user's notifications
+export async function deleteNotification(req, res) {
+  try {
+    await pool.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id])
+    return success(res, { message: 'Notification deleted' })
+  } catch (err) {
+    return safeError(res, err, 'Failed to delete notification', 500)
   }
 }
 

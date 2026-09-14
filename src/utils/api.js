@@ -272,9 +272,30 @@ export async function apiMarkAllNotificationsRead() {
   return request('/customers/notifications/read-all', { method: 'PUT' })
 }
 
+export async function apiClearAllNotifications() {
+  return request('/customers/notifications/clear-all', { method: 'DELETE' })
+}
+
+export async function apiDeleteNotification(id) {
+  return request('/customers/notifications/' + id, { method: 'DELETE' })
+}
+
+// Admin notifications
+export async function apiClearAllAdminNotifications() {
+  return request('/admin/notifications', { method: 'DELETE' })
+}
+
+export async function apiDeleteAdminNotification(id) {
+  return request('/admin/notifications/' + id, { method: 'DELETE' })
+}
+
 // Admin
 export async function apiGetDashboard() {
   return request('/admin/dashboard')
+}
+
+export async function apiCleanupFakeData() {
+  return request('/admin/cleanup', { method: 'POST' })
 }
 
 export async function apiGetCustomers() {

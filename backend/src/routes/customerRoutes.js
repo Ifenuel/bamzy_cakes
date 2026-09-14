@@ -12,6 +12,10 @@ router.delete('/', requireAuth, customerController.deleteAccount)
 router.get('/notifications', requireAuth, customerController.getNotifications)
 router.put('/notifications/:id/read', requireAuth, customerController.markNotificationRead)
 router.put('/notifications/read-all', requireAuth, customerController.markAllNotificationsRead)
+// Clear notifications — single or all. MUST be registered BEFORE /notifications/:id/read
+// so 'clear-all' is not swallowed as an :id param.
+router.delete('/notifications/clear-all', requireAuth, customerController.clearAllNotifications)
+router.delete('/notifications/:id', requireAuth, customerController.deleteNotification)
 
 // ── Wishlist ──
 router.get('/wishlist', requireAuth, async (req, res) => {
