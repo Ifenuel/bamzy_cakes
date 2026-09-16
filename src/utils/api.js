@@ -461,12 +461,16 @@ export async function apiGetNewsletterStats() {
 export async function apiGetDeliveryZones() {
   return request('/delivery-zones')
 }
-
 export async function apiCalculateDeliveryFee(city, state) {
   const params = new URLSearchParams()
   if (city) params.set('city', city)
   if (state) params.set('state', state)
   return request('/delivery-zones/calculate?' + params.toString())
+}
+
+// Which supported states currently have an active delivery zone (names only).
+export async function apiGetDeliveryStates() {
+  return request('/delivery-zones/states')
 }
 
 // Admin delivery zone management

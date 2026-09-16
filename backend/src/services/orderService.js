@@ -1,4 +1,5 @@
 import pool from '../config/db.js'
+import { resolveDeliveryFee } from './deliveryZoneService.js'
 
 export async function createOrder({ customer_id, customer_name, customer_email, customer_phone, items, delivery_method, delivery_address, delivery_city, delivery_state, delivery_notes }) {
   const client = await pool.connect()
@@ -48,33 +49,20 @@ export async function createOrder({ customer_id, customer_name, customer_email, 
       }
     }
 
-    // Calculate delivery fee based on location
+    // Delivery fee: resolved server-side from the admin-configured
+    // delivery_zones table. The client never sends or influences this price.
+    // If the customer's state has no active zone, the order is REJECTED with a
+    // clear message instead of being silently charged a default fee.
     let deliveryFee = 0
     if (delivery_method === 'delivery') {
-      const cityLower = (delivery_city || '').toLowerCase().trim()
-      const stateLower = (delivery_state || '').toLowerCase().trim()
-
-      // Determine zone slug
-      let zoneSlug = 'ibadan'
-      if (cityLower.includes('ibadan') || stateLower === 'oyo') {
-        zoneSlug = 'ibadan'
-      } else if (cityLower.includes('lagos') || stateLower === 'lagos') {
-        zoneSlug = 'lagos'
-      } else if (stateLower === 'ogun' || cityLower.includes('abeokuta') || cityLower.includes('ijebu')) {
-        zoneSlug = 'ogun'
-      } else if (stateLower === 'ondo' || cityLower.includes('akure')) {
-        zoneSlug = 'ondo'
-      } else if (stateLower === 'ekiti' || cityLower.includes('ado-ekiti')) {
-        zoneSlug = 'ekiti'
-      } else if (stateLower === 'osun' || cityLower.includes('osogbo') || cityLower.includes('ife')) {
-        zoneSlug = 'osun'
-      }
-
-      const zoneRes = await client.query(
-        'SELECT delivery_fee FROM delivery_zones WHERE zone_slug = $1 AND is_active = true',
-        [zoneSlug]
+      const match = await resolveDeliveryFee(
+        { state: delivery_state, city: delivery_city },
+        client // same transaction → consistent with everything else in the order
       )
-      deliveryFee = zoneRes.rows.length > 0 ? parseFloat(zoneRes.rows[0].delivery_fee) : 1500
+      if (!match.matched) {
+        throw new Error('Delivery is not available for the selected location. Please choose pickup or contact us on WhatsApp.')
+      }
+      deliveryFee = match.fee
     }
     const total = subtotal + deliveryFee
 

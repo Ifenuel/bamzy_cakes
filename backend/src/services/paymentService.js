@@ -171,8 +171,10 @@ export async function verifyPayment(reference) {
       try {
         const { sendOrderConfirmation } = await import('./emailService.js')
         const orderResult = await pool.query(
-          `SELECT id, customer_name, customer_email, customer_phone, total, order_number,
-                  delivery_method, delivery_address, delivery_city
+          `SELECT id, customer_name, customer_email, customer_phone, total,
+                  order_number as "orderNumber", subtotal,
+                  delivery_fee as "deliveryFee",
+                  delivery_method, delivery_address, delivery_city, delivery_state
            FROM orders WHERE id = $1`,
           [tx.metadata.order_id]
         )

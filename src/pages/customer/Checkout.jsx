@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Truck, Store, CreditCard, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,7 +9,7 @@ import ImagePlaceholder from '../../components/common/ImagePlaceholder.jsx'
 import { useCart } from '../../context/CartContext.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../components/ui/Toast.jsx'
-import { apiCreateOrder, apiInitializePayment, apiVerifyPayment, apiTrackEvent, apiCalculateDeliveryFee } from '../../utils/api.js'
+import { apiCreateOrder, apiInitializePayment, apiVerifyPayment, apiTrackEvent, apiCalculateDeliveryFee, apiGetDeliveryStates } from '../../utils/api.js'
 import { formatNaira } from '../../utils/format.js'
 import { getImgUrl } from '../../utils/api.js'
 const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
@@ -41,27 +41,47 @@ export default function Checkout() {
   })
   const [deliveryInfo, setDeliveryInfo] = useState(null)
   const [calculatingFee, setCalculatingFee] = useState(false)
+  const [deliveryStates, setDeliveryStates] = useState([])
+
+  // Which states can we deliver to right now? Names only — fees always come
+  // from /calculate so an admin fee change applies with zero redeploy.
+  useEffect(() => {
+    let cancelled = false
+    apiGetDeliveryStates()
+      .then((states) => { if (!cancelled) setDeliveryStates(Array.isArray(states) ? states : []) })
+      .catch(() => { if (!cancelled) setDeliveryStates([]) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Recalculate whenever state/city changes — stale fees are cleared FIRST so
+  // the old fee can never flash as current. Includes the initial state pick.
+  useEffect(() => {
+    if (deliveryMethod !== 'delivery') return
+    if (!form.state && !form.city) { setDeliveryInfo(null); return }
+    let cancelled = false
+    setDeliveryInfo(null)
+    setCalculatingFee(true)
+    apiCalculateDeliveryFee(form.city, form.state)
+      .then((info) => { if (!cancelled) setDeliveryInfo(info) })
+      .catch(() => { if (!cancelled) setDeliveryInfo(null) })
+      .finally(() => { if (!cancelled) setCalculatingFee(false) })
+    return () => { cancelled = true }
+  }, [form.state, form.city, deliveryMethod])
 
   const subtotal = getCartTotal()
-  const deliveryFee = deliveryMethod === 'delivery' && items.length > 0 ? (deliveryInfo?.fee || 1500) : 0
+  // Only show a fee the backend actually confirmed. No silent defaults: while
+  // resolving we show "Calculating…", unmatched state shows "unavailable".
+  const feeConfirmed = deliveryMethod === 'delivery' && items.length > 0 && deliveryInfo?.available
+  const deliveryFee = feeConfirmed ? deliveryInfo.fee : 0
   const total = subtotal + deliveryFee
+  const deliveryUnavailable =
+    deliveryMethod === 'delivery' && Boolean(form.state || form.city) &&
+    !calculatingFee && deliveryInfo && deliveryInfo.available === false
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }))
-
-    // Recalculate delivery fee when city or state changes
-    if ((name === 'city' || name === 'state') && deliveryMethod === 'delivery') {
-      const newForm = { ...form, [name]: value }
-      if (newForm.city || newForm.state) {
-        setCalculatingFee(true)
-        apiCalculateDeliveryFee(newForm.city, newForm.state)
-          .then((info) => setDeliveryInfo(info))
-          .catch(() => setDeliveryInfo(null))
-          .finally(() => setCalculatingFee(false))
-      }
-    }
   }
 
   function validate() {
@@ -72,6 +92,12 @@ export default function Checkout() {
     if (deliveryMethod === 'delivery') {
       if (!form.address.trim()) errs.address = 'Delivery address is required.'
       if (!form.city.trim()) errs.city = 'City is required.'
+      if (!form.state.trim()) errs.state = 'Select your delivery state.'
+      if (form.state.trim() && !deliveryInfo?.available) {
+        errs.state = calculatingFee
+          ? 'Checking delivery availability...'
+          : 'Delivery is currently unavailable for this state. Please choose pickup or contact us.'
+      }
     }
     return errs
   }
@@ -80,12 +106,26 @@ export default function Checkout() {
   const [paymentInitiated, setPaymentInitiated] = useState(false)
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false)
 
+  function switchDeliveryMethod(method) {
+    setDeliveryMethod(method)
+    if (method === 'pickup') setDeliveryInfo(null) // drop any delivery fee state
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     if (items.length === 0) { showToast('Your cart is empty.', 'error'); return }
     if (isSubmitting || paymentInitiated) return // Prevent double charge
+    if (deliveryMethod === 'delivery' && !deliveryInfo?.available) {
+      showToast(
+        calculatingFee
+          ? 'Still calculating your delivery fee — one moment.'
+          : 'Delivery is currently unavailable for this state. Please choose pickup or contact us.',
+        'error'
+      )
+      return
+    }
 
     // Show confirmation dialog first
     setShowPaymentConfirm(true)
@@ -188,6 +228,7 @@ export default function Checkout() {
 
   const ic = 'w-full rounded-xl2 border border-lilac-soft bg-white px-4 py-3 text-sm text-ink transition-colors placeholder:text-ink-muted/50 focus:border-lilac focus:outline-none focus:ring-2 focus:ring-lilac/20'
   const ec = 'text-xs text-pink mt-1'
+  const statesValue = form.state ? form.state.toLowerCase() : ''
 
   return (
     <Section>
@@ -203,11 +244,11 @@ export default function Checkout() {
             <div className="rounded-xl2 border border-lilac-soft bg-white p-5 shadow-soft">
               <h2 className="font-heading text-lg font-semibold">Delivery Method</h2>
               <div className="mt-4 flex gap-3">
-                <button type="button" onClick={() => setDeliveryMethod('delivery')}
+                <button type="button" onClick={() => switchDeliveryMethod('delivery')}
                   className={'flex flex-1 items-center justify-center gap-2 rounded-xl2 border-2 px-4 py-3 text-sm font-semibold transition-colors ' + (deliveryMethod === 'delivery' ? 'border-pink bg-pink-soft text-pink' : 'border-lilac-soft text-ink-muted hover:border-lilac')}>
                   <Truck size={18} /> Delivery
                 </button>
-                <button type="button" onClick={() => setDeliveryMethod('pickup')}
+                <button type="button" onClick={() => switchDeliveryMethod('pickup')}
                   className={'flex flex-1 items-center justify-center gap-2 rounded-xl2 border-2 px-4 py-3 text-sm font-semibold transition-colors ' + (deliveryMethod === 'pickup' ? 'border-pink bg-pink-soft text-pink' : 'border-lilac-soft text-ink-muted hover:border-lilac')}>
                   <Store size={18} /> Pickup
                 </button>
@@ -257,8 +298,20 @@ export default function Checkout() {
                     {errors.city && <p className={ec}>{errors.city}</p>}
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-ink">State</label>
-                    <input name="state" value={form.state} onChange={handleChange} placeholder="Lagos" className={ic} />
+                    <label htmlFor="checkout-state" className="mb-1 block text-sm font-medium text-ink">State *</label>
+                    <select
+                      id="checkout-state"
+                      name="state"
+                      value={statesValue}
+                      onChange={handleChange}
+                      className={ic}
+                    >
+                      <option value="">Select State</option>
+                      {deliveryStates.map((s) => (
+                        <option key={s} value={s.toLowerCase()}>{s}</option>
+                      ))}
+                    </select>
+                    {errors.state && <p className={ec}>{errors.state}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-sm font-medium text-ink">Delivery Notes</label>
@@ -291,15 +344,26 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-ink-muted">
-                    Delivery{deliveryInfo?.zone && deliveryMethod === 'delivery' && (
+                    Delivery{feeConfirmed && deliveryInfo?.zone && (
                       <span className="text-xs"> ({deliveryInfo.zone})</span>
                     )}
                   </span>
                   <span className="font-medium text-ink">
-                    {calculatingFee ? 'Calculating...' : formatNaira(deliveryFee)}
+                    {deliveryMethod !== 'delivery'
+                      ? '—'
+                      : calculatingFee
+                        ? 'Calculating...'
+                        : deliveryUnavailable
+                          ? 'Unavailable'
+                          : feeConfirmed
+                            ? formatNaira(deliveryFee)
+                            : '—'}
                   </span>
                 </div>
-                {deliveryMethod === 'delivery' && deliveryInfo?.zone && (
+                {deliveryUnavailable && (
+                  <p className="text-xs text-pink">Delivery is currently unavailable for this state. Please choose pickup or contact us.</p>
+                )}
+                {feeConfirmed && deliveryInfo?.hoursMin != null && (
                   <p className="text-xs text-ink-muted">Est. delivery: {deliveryInfo.hoursMin}-{deliveryInfo.hoursMax} hours</p>
                 )}
                 <div className="flex justify-between border-t border-lilac-deep/10 pt-2">
@@ -365,7 +429,7 @@ export default function Checkout() {
                     ))}
                     {deliveryFee > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-ink-muted">Delivery</span>
+                        <span className="text-ink-muted">Delivery{feeConfirmed && deliveryInfo?.zone ? ` (${deliveryInfo.zone})` : ''}</span>
                         <span className="font-medium text-ink">{formatNaira(deliveryFee)}</span>
                       </div>
                     )}

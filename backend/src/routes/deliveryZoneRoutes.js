@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import pool from '../config/db.js'
 import { requireAuth, requireAdmin } from '../middleware/auth.js'
+import { resolveDeliveryFee, getSupportedStatesWithActiveZones } from '../services/deliveryZoneService.js'
 
 const router = Router()
 
@@ -21,45 +22,53 @@ router.get('/', async (req, res) => {
   }
 })
 
-// GET /api/delivery-zones/calculate?city=xxx&state=xxx — calculates fee for checkout
+// GET /api/delivery-zones/calculate?city=xxx&state=xxx — resolves the fee for
+// checkout from the ADMIN-CONFIGURED delivery_zones table. There is no default
+// fee here on purpose: when no active zone matches, we return
+// { available: false } and the customer is told delivery is unavailable —
+// we never silently charge a made-up price.
 router.get('/calculate', async (req, res) => {
   try {
     const { city, state } = req.query
     if (!city && !state) {
-      return res.json({ success: true, data: { fee: 1500, zone: 'Within Ibadan', estimatedHoursMin: 2, estimatedHoursMax: 4 } })
+      return res.json({ success: true, data: { available: false } })
     }
 
-    const cityLower = (city || '').toLowerCase().trim()
-    const stateLower = (state || '').toLowerCase().trim()
-
-    let zoneSlug = 'ibadan'
-    if (cityLower.includes('ibadan') || stateLower === 'oyo' || stateLower === 'ibadan') {
-      zoneSlug = 'ibadan'
-    } else if (cityLower.includes('lagos') || stateLower === 'lagos') {
-      zoneSlug = 'lagos'
-    } else if (stateLower === 'ogun' || cityLower.includes('abeokuta') || cityLower.includes('ijebu') || cityLower.includes('sango')) {
-      zoneSlug = 'ogun'
-    } else if (stateLower === 'ondo' || cityLower.includes('akure') || cityLower.includes('ondo')) {
-      zoneSlug = 'ondo'
-    } else if (stateLower === 'ekiti' || cityLower.includes('ado-ekiti') || cityLower.includes('ekiti')) {
-      zoneSlug = 'ekiti'
-    } else if (stateLower === 'osun' || cityLower.includes('osogbo') || cityLower.includes('ife') || cityLower.includes('osun')) {
-      zoneSlug = 'osun'
+    const match = await resolveDeliveryFee({ city, state })
+    if (!match.matched) {
+      return res.json({ success: true, data: { available: false } })
     }
 
-    const result = await pool.query(
-      'SELECT zone_name as "zoneName", delivery_fee as "deliveryFee", estimated_hours_min as "estimatedHoursMin", estimated_hours_max as "estimatedHoursMax" FROM delivery_zones WHERE zone_slug = $1 AND is_active = true',
-      [zoneSlug]
-    )
-
-    if (result.rows.length === 0) {
-      return res.json({ success: true, data: { fee: 1500, zone: 'Within Ibadan', estimatedHoursMin: 2, estimatedHoursMax: 4 } })
-    }
-
-    res.json({ success: true, data: result.rows[0] })
+    res.json({
+      success: true,
+      data: {
+        available: true,
+        fee: match.fee,
+        zone: match.zoneName,
+        zoneName: match.zoneName,
+        zoneSlug: match.zoneSlug,
+        estimatedHoursMin: match.hoursMin,
+        estimatedHoursMax: match.hoursMax,
+        hoursMin: match.hoursMin,
+        hoursMax: match.hoursMax,
+      },
+    })
   } catch (err) {
     console.error('Error calculating delivery fee:', err.message)
     res.status(500).json({ success: false, message: 'Failed to calculate delivery fee' })
+  }
+})
+
+// GET /api/delivery-zones/states — which supported states currently have an
+// active zone (names only; fees always come from /calculate so admin edits
+// apply instantly).
+router.get('/states', async (req, res) => {
+  try {
+    const states = await getSupportedStatesWithActiveZones()
+    res.json({ success: true, data: states })
+  } catch (err) {
+    console.error('Error fetching supported states:', err.message)
+    res.status(500).json({ success: false, message: 'Failed to fetch supported states' })
   }
 })
 
